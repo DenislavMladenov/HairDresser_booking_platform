@@ -1,9 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type {
-  AdminBooking,
-  AdminBookingListResponse,
-  BookingConfirmation,
-} from '@booking/shared';
+import type { AdminBooking, AdminBookingListResponse, BookingConfirmation } from '@booking/shared';
 import { AvailabilityService } from '../availability/availability.service';
 import { ApiException } from '../common/errors/api-exception';
 import { isOverlapViolation } from '../common/errors/database-errors';
@@ -136,7 +132,7 @@ export class BookingsService {
       serviceId: service.id,
       startTime,
       endTime,
-      status: (dto.status) ?? BookingStatus.CONFIRMED,
+      status: dto.status ?? BookingStatus.CONFIRMED,
       notes: dto.notes?.trim() || null,
       createdByAdmin: true,
     });

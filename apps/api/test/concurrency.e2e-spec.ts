@@ -49,9 +49,7 @@ describe('Concurrent booking attempts', () => {
 
   /** Independent clients, so no cookie or rate limit state is shared. */
   async function createClients(count: number): Promise<TestClient[]> {
-    return Promise.all(
-      Array.from({ length: count }, () => TestClient.create(context.server)),
-    );
+    return Promise.all(Array.from({ length: count }, () => TestClient.create(context.server)));
   }
 
   function payload(hour: number, name: string) {
@@ -75,9 +73,7 @@ describe('Concurrent booking attempts', () => {
     expect(statuses).toEqual([201, 409]);
 
     const rejected = responses.find((response) => response.status === 409);
-    expect([ApiErrorCode.SLOT_TAKEN, ApiErrorCode.SLOT_UNAVAILABLE]).toContain(
-      rejected!.body.code,
-    );
+    expect([ApiErrorCode.SLOT_TAKEN, ApiErrorCode.SLOT_UNAVAILABLE]).toContain(rejected!.body.code);
 
     // Most importantly: one appointment exists, not two.
     const bookings = await context.prisma.booking.findMany();

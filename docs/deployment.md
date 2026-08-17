@@ -80,16 +80,16 @@ openssl rand -base64 18   # POSTGRES_PASSWORD
 
 The values that matter in production:
 
-| Variable            | Value                                                            |
-| ------------------- | ---------------------------------------------------------------- |
-| `DOMAIN`            | `booking.example.com`, the site address Caddy serves             |
-| `ACME_EMAIL`        | your address, for certificate expiry warnings                    |
-| `APP_URL`           | `https://booking.example.com`, used for cookies and CORS         |
-| `CORS_ORIGINS`      | usually empty; `APP_URL` is always allowed                       |
-| `POSTGRES_PASSWORD` | generated above                                                  |
-| `SESSION_SECRET`    | generated above, at least 32 characters                          |
-| `BUSINESS_TIMEZONE` | `Europe/Sofia`                                                   |
-| `ENABLE_SWAGGER`    | `false`                                                          |
+| Variable            | Value                                                    |
+| ------------------- | -------------------------------------------------------- |
+| `DOMAIN`            | `booking.example.com`, the site address Caddy serves     |
+| `ACME_EMAIL`        | your address, for certificate expiry warnings            |
+| `APP_URL`           | `https://booking.example.com`, used for cookies and CORS |
+| `CORS_ORIGINS`      | usually empty; `APP_URL` is always allowed               |
+| `POSTGRES_PASSWORD` | generated above                                          |
+| `SESSION_SECRET`    | generated above, at least 32 characters                  |
+| `BUSINESS_TIMEZONE` | `Europe/Sofia`                                           |
+| `ENABLE_SWAGGER`    | `false`                                                  |
 
 `.env` is not committed and must never be. Keep a copy in your password manager;
 losing `POSTGRES_PASSWORD` means losing access to the data, and rotating

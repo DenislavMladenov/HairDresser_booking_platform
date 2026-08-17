@@ -183,7 +183,10 @@ describe('Bookings', () => {
     });
 
     it('refuses a slot beyond the booking horizon', async () => {
-      await context.prisma.bookingSettings.update({ where: { id: 1 }, data: { maxAdvanceDays: 2 } });
+      await context.prisma.bookingSettings.update({
+        where: { id: 1 },
+        data: { maxAdvanceDays: 2 },
+      });
 
       const farDate = futureDate(context, 30);
       await client
@@ -224,8 +227,14 @@ describe('Bookings', () => {
 
   describe('validating customer input', () => {
     it('rejects a missing or too short name', async () => {
-      await client.post('/api/bookings').send(bookingPayload(10, { customerName: '' })).expect(400);
-      await client.post('/api/bookings').send(bookingPayload(10, { customerName: 'A' })).expect(400);
+      await client
+        .post('/api/bookings')
+        .send(bookingPayload(10, { customerName: '' }))
+        .expect(400);
+      await client
+        .post('/api/bookings')
+        .send(bookingPayload(10, { customerName: 'A' }))
+        .expect(400);
     });
 
     it('rejects an over-long name', async () => {
@@ -282,7 +291,10 @@ describe('Bookings', () => {
         .send(bookingPayload(10, { createdByAdmin: true }))
         .expect(400);
 
-      await client.post('/api/bookings').send(bookingPayload(10, { notes: 'x' })).expect(400);
+      await client
+        .post('/api/bookings')
+        .send(bookingPayload(10, { notes: 'x' }))
+        .expect(400);
     });
   });
 

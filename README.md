@@ -26,13 +26,13 @@ The barber can:
 
 ## Technology
 
-| Layer    | Choice                                                          |
-| -------- | --------------------------------------------------------------- |
+| Layer    | Choice                                                           |
+| -------- | ---------------------------------------------------------------- |
 | Frontend | React 19, Vite, Tailwind CSS, TanStack Query, React Router       |
 | Backend  | NestJS 11, REST, Prisma 7                                        |
-| Database | PostgreSQL 17                                                   |
+| Database | PostgreSQL 17                                                    |
 | Edge     | Caddy, automatic HTTPS, serves the built SPA and proxies the API |
-| Runtime  | Docker Compose on a Debian VM                                   |
+| Runtime  | Docker Compose on a Debian VM                                    |
 
 TypeScript throughout, in a pnpm workspace:
 
@@ -88,20 +88,20 @@ committed; `.env` is ignored by git.
 
 ## Commands
 
-| Command                 | What it does                                        |
-| ----------------------- | --------------------------------------------------- |
-| `pnpm dev`              | API and web dev servers together                    |
-| `pnpm build`            | Build every package                                 |
-| `pnpm typecheck`        | Type check every package                            |
-| `pnpm lint`             | ESLint across the workspace                         |
-| `pnpm test`             | Unit tests, no database needed                      |
-| `pnpm test:integration` | Integration tests against the `booking_test` schema |
-| `pnpm db:up` / `db:down`| Start or stop the development database              |
-| `pnpm db:migrate`       | Create and apply a migration                        |
-| `pnpm db:seed`          | Idempotent baseline data                            |
-| `pnpm bootstrap:admin`  | Create or reset the admin account                   |
-| `pnpm format`           | Prettier                                            |
-| `pnpm format:eol`       | Normalise line endings to LF                        |
+| Command                  | What it does                                        |
+| ------------------------ | --------------------------------------------------- |
+| `pnpm dev`               | API and web dev servers together                    |
+| `pnpm build`             | Build every package                                 |
+| `pnpm typecheck`         | Type check every package                            |
+| `pnpm lint`              | ESLint across the workspace                         |
+| `pnpm test`              | Unit tests, no database needed                      |
+| `pnpm test:integration`  | Integration tests against the `booking_test` schema |
+| `pnpm db:up` / `db:down` | Start or stop the development database              |
+| `pnpm db:migrate`        | Create and apply a migration                        |
+| `pnpm db:seed`           | Idempotent baseline data                            |
+| `pnpm bootstrap:admin`   | Create or reset the admin account                   |
+| `pnpm format`            | Prettier                                            |
+| `pnpm format:eol`        | Normalise line endings to LF                        |
 
 ## Tests
 

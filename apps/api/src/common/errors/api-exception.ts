@@ -8,7 +8,12 @@ import { ApiErrorCode, type ApiErrorBody } from '@booking/shared';
  */
 export class ApiException extends HttpException {
   constructor(status: HttpStatus, code: ApiErrorCode, message: string, details?: string[]) {
-    const body: ApiErrorBody = { statusCode: status, code, message, ...(details ? { details } : {}) };
+    const body: ApiErrorBody = {
+      statusCode: status,
+      code,
+      message,
+      ...(details ? { details } : {}),
+    };
     super(body, status);
   }
 
@@ -52,11 +57,7 @@ export class ApiException extends HttpException {
   }
 
   static invalidStatusTransition(message: string): ApiException {
-    return new ApiException(
-      HttpStatus.CONFLICT,
-      ApiErrorCode.INVALID_STATUS_TRANSITION,
-      message,
-    );
+    return new ApiException(HttpStatus.CONFLICT, ApiErrorCode.INVALID_STATUS_TRANSITION, message);
   }
 
   static csrfFailed(message = 'Request rejected for security reasons'): ApiException {

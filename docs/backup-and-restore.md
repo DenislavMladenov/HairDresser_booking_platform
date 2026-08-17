@@ -9,12 +9,12 @@ section at least once.
 
 ## What to back up
 
-| Data                       | Where                        | How                          |
-| -------------------------- | ---------------------------- | ---------------------------- |
-| Appointments, config, users| PostgreSQL                   | `pg_dump`, described below    |
-| TLS certificates           | `caddy-data` volume          | Nothing; Caddy re-issues them |
-| Application code           | Git                          | Push to a remote              |
-| Secrets                    | `.env` on the VM             | Your password manager         |
+| Data                        | Where               | How                           |
+| --------------------------- | ------------------- | ----------------------------- |
+| Appointments, config, users | PostgreSQL          | `pg_dump`, described below    |
+| TLS certificates            | `caddy-data` volume | Nothing; Caddy re-issues them |
+| Application code            | Git                 | Push to a remote              |
+| Secrets                     | `.env` on the VM    | Your password manager         |
 
 `.env` is not in git by design. Without `POSTGRES_PASSWORD` a dump is still
 restorable, but keep the file safe anyway.

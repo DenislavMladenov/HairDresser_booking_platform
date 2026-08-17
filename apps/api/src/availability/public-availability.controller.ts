@@ -21,9 +21,7 @@ export class PublicAvailabilityController {
 
   @Get('calendar')
   @ApiOperation({ summary: 'Which upcoming days have at least one free slot' })
-  getCalendar(
-    @Query() query: AvailabilityCalendarQueryDto,
-  ): Promise<AvailabilityCalendarResponse> {
+  getCalendar(@Query() query: AvailabilityCalendarQueryDto): Promise<AvailabilityCalendarResponse> {
     return this.availability.getCalendar(query.serviceId, query.from, query.days ?? 14);
   }
 }

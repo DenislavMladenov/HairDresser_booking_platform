@@ -1,4 +1,14 @@
-import { Body, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import type { AdminBooking, AdminBookingListResponse } from '@booking/shared';
 import { AdminController } from '../common/decorators/admin-controller.decorator';

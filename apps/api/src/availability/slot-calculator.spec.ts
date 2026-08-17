@@ -1,4 +1,8 @@
-import { calculateAvailableSlots, intervalsOverlap, type SlotCalculationInput } from './slot-calculator';
+import {
+  calculateAvailableSlots,
+  intervalsOverlap,
+  type SlotCalculationInput,
+} from './slot-calculator';
 
 /**
  * The calculator is deliberately free of clocks and timezones, so these tests
@@ -55,7 +59,15 @@ describe('calculateAvailableSlots', () => {
       buildInput({ openMinute: 9 * 60, closeMinute: 11 * 60, slotIntervalMinutes: 15 }),
     );
 
-    expect(labelsOf(slots)).toEqual(['09:00', '09:15', '09:30', '09:45', '10:00', '10:15', '10:30']);
+    expect(labelsOf(slots)).toEqual([
+      '09:00',
+      '09:15',
+      '09:30',
+      '09:45',
+      '10:00',
+      '10:15',
+      '10:30',
+    ]);
   });
 
   it('never offers a slot that would run past closing time', () => {

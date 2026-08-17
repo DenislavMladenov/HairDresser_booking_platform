@@ -39,8 +39,7 @@ export function CalendarPage() {
   function countFor(date: string): number {
     return items.filter(
       (booking) =>
-        booking.startTime.slice(0, 10) === date &&
-        booking.status !== BookingStatus.CANCELLED,
+        booking.startTime.slice(0, 10) === date && booking.status !== BookingStatus.CANCELLED,
     ).length;
   }
 

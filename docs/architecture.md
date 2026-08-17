@@ -139,14 +139,14 @@ database dump.
 
 ## Growing the system
 
-| Change              | What it would touch                                                                                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Multiple barbers    | A `Barber` table, a `barberId` on `Booking`, `WorkingHours` and `BlockedTime`, and the exclusion constraint extended with `barberId WITH =` (needs the `btree_gist` extension). |
-| Customer accounts   | A `Customer` table and an optional link from `Booking`. The `Role` column already allows a non-admin role.                                                                      |
-| Reminders           | An outbox table plus a scheduled worker. `customerEmail` and `customerPhone` are already captured.                                                                              |
-| Payments            | A `Payment` table keyed by booking. Money is already `numeric(10,2)`, never floating point.                                                                                     |
-| Multiple locations  | A `Location` table, and working hours and blocked times scoped to it.                                                                                                          |
-| Reporting           | Read-only queries over the existing tables; `COMPLETED` and `NO_SHOW` are already distinct states.                                                                              |
+| Change             | What it would touch                                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Multiple barbers   | A `Barber` table, a `barberId` on `Booking`, `WorkingHours` and `BlockedTime`, and the exclusion constraint extended with `barberId WITH =` (needs the `btree_gist` extension). |
+| Customer accounts  | A `Customer` table and an optional link from `Booking`. The `Role` column already allows a non-admin role.                                                                      |
+| Reminders          | An outbox table plus a scheduled worker. `customerEmail` and `customerPhone` are already captured.                                                                              |
+| Payments           | A `Payment` table keyed by booking. Money is already `numeric(10,2)`, never floating point.                                                                                     |
+| Multiple locations | A `Location` table, and working hours and blocked times scoped to it.                                                                                                           |
+| Reporting          | Read-only queries over the existing tables; `COMPLETED` and `NO_SHOW` are already distinct states.                                                                              |
 
 The single-row `BookingSettings` table is the one thing that would need
 rethinking, since policy becomes per barber or per location.

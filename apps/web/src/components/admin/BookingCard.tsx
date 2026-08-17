@@ -75,11 +75,7 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
 
         <div className="flex shrink-0 flex-wrap gap-2">
           {booking.status === BookingStatus.PENDING ? (
-            <Button
-              size="sm"
-              disabled={busy}
-              onClick={() => actions.confirm.mutate(booking.id)}
-            >
+            <Button size="sm" disabled={busy} onClick={() => actions.confirm.mutate(booking.id)}>
               Confirm
             </Button>
           ) : null}

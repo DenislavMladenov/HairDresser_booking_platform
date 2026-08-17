@@ -147,7 +147,9 @@ export class AvailabilityService {
 
     const earliestStartMs = context.nowMs + context.policy.minLeadTimeMinutes * 60_000;
     const latestStartMs = this.time
-      .startOfLocalDay(this.time.addLocalDays(this.time.todayIsoDate(), context.policy.maxAdvanceDays))
+      .startOfLocalDay(
+        this.time.addLocalDays(this.time.todayIsoDate(), context.policy.maxAdvanceDays),
+      )
       .toMillis();
 
     return calculateAvailableSlots({

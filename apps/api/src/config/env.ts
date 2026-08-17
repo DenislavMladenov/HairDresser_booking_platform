@@ -21,7 +21,10 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().default(''),
 
   BUSINESS_TIMEZONE: timezone.default('Europe/Sofia'),
-  CURRENCY: z.string().regex(/^[A-Z]{3}$/, 'must be a 3-letter currency code').default('BGN'),
+  CURRENCY: z
+    .string()
+    .regex(/^[A-Z]{3}$/, 'must be a 3-letter currency code')
+    .default('BGN'),
 
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   SESSION_COOKIE_NAME: z

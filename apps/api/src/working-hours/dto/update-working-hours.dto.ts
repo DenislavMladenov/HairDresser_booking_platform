@@ -13,7 +13,12 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { MINUTES_IN_DAY, type UpdateWorkingHoursDay, type UpdateWorkingHoursRequest, type Weekday } from '@booking/shared';
+import {
+  MINUTES_IN_DAY,
+  type UpdateWorkingHoursDay,
+  type UpdateWorkingHoursRequest,
+  type Weekday,
+} from '@booking/shared';
 
 export class WeeklyBreakInputDto {
   @ApiProperty({ example: 780, description: 'Minutes from local midnight (13:00 = 780)' })

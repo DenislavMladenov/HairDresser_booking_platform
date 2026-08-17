@@ -35,9 +35,7 @@ export function TimeStep({ serviceId, date, selected, onSelect }: TimeStepProps)
                 onClick={() => onSelect({ startTime: slot.startTime, label: slot.label })}
                 aria-pressed={isSelected}
                 className={`rounded-lg py-2.5 text-sm font-medium transition-colors ${
-                  isSelected
-                    ? 'bg-brand-600 text-white'
-                    : 'ring-1 ring-slate-200 hover:bg-slate-50'
+                  isSelected ? 'bg-brand-600 text-white' : 'ring-1 ring-slate-200 hover:bg-slate-50'
                 }`}
               >
                 {slot.label}

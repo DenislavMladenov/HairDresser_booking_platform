@@ -21,9 +21,12 @@ export function TodayPage() {
       booking.status !== BookingStatus.PENDING && booking.status !== BookingStatus.CONFIRMED,
   );
 
-  const failure = [actions.confirm.error, actions.cancel.error, actions.complete.error, actions.noShow.error].find(
-    Boolean,
-  );
+  const failure = [
+    actions.confirm.error,
+    actions.cancel.error,
+    actions.complete.error,
+    actions.noShow.error,
+  ].find(Boolean);
 
   return (
     <div className="space-y-6">

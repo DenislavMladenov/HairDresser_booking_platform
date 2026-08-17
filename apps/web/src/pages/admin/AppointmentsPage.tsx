@@ -28,9 +28,7 @@ export function AppointmentsPage() {
 
   function toggleStatus(status: BookingStatus): void {
     setStatuses((current) =>
-      current.includes(status)
-        ? current.filter((item) => item !== status)
-        : [...current, status],
+      current.includes(status) ? current.filter((item) => item !== status) : [...current, status],
     );
   }
 
@@ -126,9 +124,7 @@ export function AppointmentsPage() {
         <BookingEditor booking={editing} actions={actions} onClose={() => setEditing(null)} />
       ) : null}
 
-      {creating ? (
-        <ManualBookingForm actions={actions} onClose={() => setCreating(false)} />
-      ) : null}
+      {creating ? <ManualBookingForm actions={actions} onClose={() => setCreating(false)} /> : null}
     </div>
   );
 }

@@ -1,10 +1,23 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { AuthenticatedUser, CsrfTokenResponse } from '@booking/shared';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { clearedSessionCookieOptions, sessionCookieOptions } from '../common/security/cookie-options';
+import {
+  clearedSessionCookieOptions,
+  sessionCookieOptions,
+} from '../common/security/cookie-options';
 import { AppConfig } from '../config/app-config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';

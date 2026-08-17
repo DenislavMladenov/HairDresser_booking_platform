@@ -1,4 +1,14 @@
-import { Body, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import type { BlockedTimeDto } from '@booking/shared';
 import { AdminController } from '../common/decorators/admin-controller.decorator';

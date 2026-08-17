@@ -19,10 +19,34 @@ const LUNCH_START = 13 * 60;
 const LUNCH_END = 14 * 60;
 
 const SAMPLE_SERVICES = [
-  { name: 'Haircut', durationMinutes: 30, price: '25.00', sortOrder: 1, description: 'Classic cut and styling' },
-  { name: 'Beard trim', durationMinutes: 20, price: '15.00', sortOrder: 2, description: 'Shape and line up' },
-  { name: 'Hair and beard', durationMinutes: 60, price: '35.00', sortOrder: 3, description: 'Full service' },
-  { name: 'Kids haircut', durationMinutes: 20, price: '18.00', sortOrder: 4, description: 'Up to 12 years old' },
+  {
+    name: 'Haircut',
+    durationMinutes: 30,
+    price: '25.00',
+    sortOrder: 1,
+    description: 'Classic cut and styling',
+  },
+  {
+    name: 'Beard trim',
+    durationMinutes: 20,
+    price: '15.00',
+    sortOrder: 2,
+    description: 'Shape and line up',
+  },
+  {
+    name: 'Hair and beard',
+    durationMinutes: 60,
+    price: '35.00',
+    sortOrder: 3,
+    description: 'Full service',
+  },
+  {
+    name: 'Kids haircut',
+    durationMinutes: 20,
+    price: '18.00',
+    sortOrder: 4,
+    description: 'Up to 12 years old',
+  },
 ];
 
 async function main(): Promise<void> {
@@ -91,7 +115,6 @@ async function main(): Promise<void> {
 }
 
 void main().catch((error: unknown) => {
-   
   console.error('Seed failed:', error instanceof Error ? error.message : error);
   process.exitCode = 1;
 });

@@ -63,8 +63,7 @@ export const api = {
   },
 
   bookings: {
-    create: (payload: CreateBookingRequest) =>
-      http.post<BookingConfirmation>('/bookings', payload),
+    create: (payload: CreateBookingRequest) => http.post<BookingConfirmation>('/bookings', payload),
   },
 
   auth: {
@@ -90,7 +89,8 @@ export const api = {
 
     services: {
       list: () => http.get<AdminService[]>('/admin/services'),
-      create: (payload: CreateServiceRequest) => http.post<AdminService>('/admin/services', payload),
+      create: (payload: CreateServiceRequest) =>
+        http.post<AdminService>('/admin/services', payload),
       update: (id: string, payload: UpdateServiceRequest) =>
         http.patch<AdminService>(`/admin/services/${id}`, payload),
     },
@@ -104,12 +104,8 @@ export const api = {
     blockedTimes: {
       list: (from?: string, to?: string) =>
         http.get<BlockedTimeDto[]>(`/admin/blocked-times${toQuery({ from, to })}`),
-      create: (payload: {
-        startTime: string;
-        endTime: string;
-        reason?: string;
-        force?: boolean;
-      }) => http.post<BlockedTimeDto>('/admin/blocked-times', payload),
+      create: (payload: { startTime: string; endTime: string; reason?: string; force?: boolean }) =>
+        http.post<BlockedTimeDto>('/admin/blocked-times', payload),
       blockDay: (payload: { date: string; reason?: string; force?: boolean }) =>
         http.post<BlockedTimeDto>('/admin/blocked-times/whole-day', payload),
       remove: (id: string) => http.delete<void>(`/admin/blocked-times/${id}`),

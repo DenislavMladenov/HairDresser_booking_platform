@@ -17,7 +17,12 @@ export const SLOT_OCCUPYING_STATUSES: BookingStatus[] = [
 
 /** Which status changes the barber is allowed to make. */
 const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
-  PENDING: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.COMPLETED, BookingStatus.NO_SHOW],
+  PENDING: [
+    BookingStatus.CONFIRMED,
+    BookingStatus.CANCELLED,
+    BookingStatus.COMPLETED,
+    BookingStatus.NO_SHOW,
+  ],
   CONFIRMED: [BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.NO_SHOW],
   // Terminal states. Reopening one would need an overlap check, and in practice
   // the barber creates a new appointment instead.

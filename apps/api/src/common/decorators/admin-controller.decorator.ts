@@ -1,5 +1,10 @@
 import { applyDecorators, Controller, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiForbiddenResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Role } from '@booking/shared';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { SessionGuard } from '../../auth/guards/session.guard';

@@ -43,7 +43,9 @@ export function BlockedTimesPage() {
       return;
     }
 
-    const start = DateTime.fromISO(`${date}T${startTime}`, { zone: BUSINESS_TIMEZONE }).toUTC().toISO();
+    const start = DateTime.fromISO(`${date}T${startTime}`, { zone: BUSINESS_TIMEZONE })
+      .toUTC()
+      .toISO();
     const end = DateTime.fromISO(`${date}T${endTime}`, { zone: BUSINESS_TIMEZONE }).toUTC().toISO();
 
     if (!start || !end) {
@@ -51,7 +53,12 @@ export function BlockedTimesPage() {
     }
 
     mutations.create.mutate(
-      { startTime: start, endTime: end, ...(reason.trim() ? { reason: reason.trim() } : {}), force },
+      {
+        startTime: start,
+        endTime: end,
+        ...(reason.trim() ? { reason: reason.trim() } : {}),
+        force,
+      },
       { onSuccess, onError },
     );
   }

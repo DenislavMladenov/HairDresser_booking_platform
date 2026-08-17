@@ -76,7 +76,11 @@ export function calculateAvailableSlots(input: SlotCalculationInput): AbsoluteIn
   ) {
     const endMinute = startMinute + serviceDurationMinutes;
 
-    if (breaks.some((item) => intervalsOverlap(startMinute, endMinute, item.startMinute, item.endMinute))) {
+    if (
+      breaks.some((item) =>
+        intervalsOverlap(startMinute, endMinute, item.startMinute, item.endMinute),
+      )
+    ) {
       continue;
     }
 

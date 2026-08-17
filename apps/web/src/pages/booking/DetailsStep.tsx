@@ -95,9 +95,7 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
         </div>
         <div className="mt-1.5 flex justify-between gap-4">
           <dt className="text-slate-600">Duration</dt>
-          <dd className="font-medium text-slate-900">
-            {formatDuration(service.durationMinutes)}
-          </dd>
+          <dd className="font-medium text-slate-900">{formatDuration(service.durationMinutes)}</dd>
         </div>
         <div className="mt-1.5 flex justify-between gap-4">
           <dt className="text-slate-600">Price</dt>
@@ -162,12 +160,7 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
           />
         </Field>
 
-        <Field
-          label="Email"
-          htmlFor="customerEmail"
-          hint="Optional."
-          error={errors.customerEmail}
-        >
+        <Field label="Email" htmlFor="customerEmail" hint="Optional." error={errors.customerEmail}>
           <TextInput
             id="customerEmail"
             name="email"

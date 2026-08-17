@@ -122,7 +122,10 @@ describe('Authentication', () => {
     });
 
     it('validates the request body', async () => {
-      await client.post('/api/auth/login').send({ email: 'not-an-email', password: '' }).expect(400);
+      await client
+        .post('/api/auth/login')
+        .send({ email: 'not-an-email', password: '' })
+        .expect(400);
       await client.post('/api/auth/login').send({}).expect(400);
       await client
         .post('/api/auth/login')
