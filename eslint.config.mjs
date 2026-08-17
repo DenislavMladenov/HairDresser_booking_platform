@@ -74,7 +74,9 @@ export default tseslint.config(
 
   {
     files: ['apps/web/**/*.{ts,tsx}'],
-    extends: [reactHooks.configs['recommended-latest'], reactRefresh.configs.vite],
+    // react-hooks v7 keeps the legacy configs at the top level and the flat
+    // config objects under `flat`.
+    extends: [reactHooks.configs.flat['recommended-latest'], reactRefresh.configs.vite],
     languageOptions: {
       globals: globals.browser,
     },
