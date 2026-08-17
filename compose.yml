@@ -1,0 +1,102 @@
+# Production stack for a Debian VM: PostgreSQL, the API, and Caddy in front.
+#
+#   docker compose up -d --build
+#
+# Only Caddy publishes ports. PostgreSQL sits on a network Caddy cannot reach, so
+# it is unreachable both from the internet and from the public-facing container.
+name: booking
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # Deterministic collation regardless of the host locale.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # A 4 GB VM also runs the API and Caddy; keep Postgres from taking it all.
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-log}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      APP_URL: ${APP_URL:?set APP_URL in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      BUSINESS_TIMEZONE: ${BUSINESS_TIMEZONE:-Europe/Sofia}
+      CURRENCY: ${CURRENCY:-BGN}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-barber_session}
+      SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-7}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+      # Caddy is the only way in, so forwarded headers can be trusted.
+      TRUST_PROXY: 'true'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+      - edge
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  caddy:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      # Certificates must outlive the container or every restart re-issues them.
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - edge
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  # Caddy and the API. Reachable from outside only through Caddy's ports.
+  edge:
+  # The API and PostgreSQL. Deliberately not attached to Caddy.
+  data:
+    internal: true
