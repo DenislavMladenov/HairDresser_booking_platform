@@ -1,0 +1,165 @@
+// Prisma schema for the barber booking platform.
+//
+// Conventions used here:
+//  - All absolute points in time are `timestamptz` and stored in UTC. Conversion
+//    to the business timezone happens in the application layer with Luxon.
+//  - Recurring weekly configuration (working hours, breaks) is stored as
+//    minute-of-day offsets in business-local wall time. Storing wall time rather
+//    than instants is what makes "we open at 09:00" survive daylight saving
+//    changes.
+//  - Money uses numeric(10,2), never a floating point type.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  // The API is a CommonJS NestJS application, so the generated client must be
+  // CommonJS too.
+  moduleFormat = "cjs"
+  // The generated files are TypeScript sources on disk. Emitting .ts specifiers
+  // lets the SWC-based dev runner and Jest resolve them directly, while tsc
+  // rewrites them to .js for the production build via
+  // rewriteRelativeImportExtensions.
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+/// Staff account. Only ADMIN exists in version 1, but the role column means
+/// additional roles can be introduced without a data migration.
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions Session[]
+}
+
+/// Server-side session. The cookie holds a random opaque token; only its
+/// SHA-256 hash is stored here, so a leaked database dump yields no usable
+/// sessions. Rows are deletable, which makes sessions revocable.
+model Session {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  tokenHash  String    @unique
+  userId     String    @db.Uuid
+  expiresAt  DateTime  @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+  lastSeenAt DateTime  @default(now()) @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Service {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  name            String   @unique
+  description     String?
+  durationMinutes Int
+  price           Decimal  @db.Decimal(10, 2)
+  active          Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  bookings Booking[]
+
+  @@index([active, sortOrder])
+}
+
+/// A customer appointment.
+///
+/// Overlap protection is enforced by a PostgreSQL exclusion constraint added in
+/// a dedicated migration (Prisma cannot express EXCLUDE constraints), so two
+/// concurrent requests can never both claim the same interval.
+model Booking {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  customerName   String
+  customerPhone  String
+  customerEmail  String?
+  serviceId      String        @db.Uuid
+  startTime      DateTime      @db.Timestamptz(3)
+  endTime        DateTime      @db.Timestamptz(3)
+  status         BookingStatus @default(PENDING)
+  notes          String?
+  createdByAdmin Boolean       @default(false)
+  cancelledAt    DateTime?     @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  // Day and range lookups for the admin calendar, plus availability queries
+  // which always filter on status as well.
+  @@index([startTime])
+  @@index([status, startTime])
+  @@index([serviceId])
+}
+
+/// Weekly opening hours, one row per ISO weekday (1 = Monday .. 7 = Sunday).
+model WorkingHours {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  dayOfWeek   Int      @unique
+  enabled     Boolean  @default(true)
+  openMinute  Int
+  closeMinute Int
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  breaks WeeklyBreak[]
+}
+
+/// Recurring unavailable period inside a working day, typically lunch.
+/// Modelled as its own table because a day can legitimately have several.
+model WeeklyBreak {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  dayOfWeek   Int
+  startMinute Int
+  endMinute   Int
+  label       String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  workingHours WorkingHours @relation(fields: [dayOfWeek], references: [dayOfWeek], onDelete: Cascade)
+
+  @@index([dayOfWeek])
+}
+
+/// One-off unavailable period: holiday, personal appointment, or a whole day off.
+model BlockedTime {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  startTime DateTime @db.Timestamptz(3)
+  endTime   DateTime @db.Timestamptz(3)
+  reason    String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([startTime, endTime])
+}
+
+/// Single-row table holding booking policy. Constrained to id = 1 by a check
+/// constraint so a second row cannot be created by accident.
+model BookingSettings {
+  id                  Int      @id @default(1)
+  slotIntervalMinutes Int      @default(15)
+  minLeadTimeMinutes  Int      @default(60)
+  maxAdvanceDays      Int      @default(60)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+}

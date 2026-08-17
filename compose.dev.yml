@@ -1,0 +1,28 @@
+# Development stack: PostgreSQL only.
+# The API and the web dev server run on the host with `pnpm dev`, which keeps
+# hot reload fast. Production runs everything in containers, see compose.yml.
+name: booking-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: booking-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-booking}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-booking}
+    ports:
+      # Published on the host so Prisma CLI and tests can reach it.
+      - '127.0.0.1:${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sh:/docker-entrypoint-initdb.d/10-init-test-db.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-booking} -d ${POSTGRES_DB:-booking}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-dev-data:

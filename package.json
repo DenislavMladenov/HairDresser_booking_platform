@@ -1,0 +1,39 @@
+{
+  "name": "booking-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Booking platform for a single barber shop",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:eol": "node scripts/normalize-line-endings.mjs .",
+    "test": "pnpm -r test",
+    "test:integration": "pnpm --filter @booking/api test:integration",
+    "db:up": "docker compose -f compose.dev.yml up -d",
+    "db:down": "docker compose -f compose.dev.yml down",
+    "db:migrate": "pnpm --filter @booking/api migrate:dev",
+    "db:seed": "pnpm --filter @booking/api seed",
+    "bootstrap:admin": "pnpm --filter @booking/api bootstrap:admin"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0"
+  },
+  "prettier": "./prettier.config.mjs"
+}

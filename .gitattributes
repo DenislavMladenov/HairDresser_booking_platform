@@ -1,0 +1,8 @@
+# The project is developed on Windows but runs on Linux, so everything is
+# normalised to LF. Shell scripts with CRLF endings fail inside containers.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

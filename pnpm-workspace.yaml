@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 11 requires every dependency with an install script to be reviewed
+# explicitly. These four compile or download native binaries we genuinely need;
+# @scarf/scarf is analytics telemetry and is denied.
+allowBuilds:
+  '@prisma/engines': true
+  '@swc/core': true
+  prisma: true
+  unrs-resolver: true
+  '@scarf/scarf': false
+
+# pnpm 11 reads only auth and registry settings from .npmrc, so these live here.
+autoInstallPeers: true
+strictPeerDependencies: false

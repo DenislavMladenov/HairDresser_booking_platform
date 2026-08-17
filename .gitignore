@@ -1,0 +1,32 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+
+# Scratch space for local one-off scripts
+.tmp/
+
+# Prisma Client is generated from prisma/schema.prisma by `pnpm prisma:generate`
+apps/api/src/generated/
+
+# Environment files hold secrets and must never be committed.
+.env
+.env.*
+!.env.example
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+.DS_Store
+Thumbs.db
+
+# Local database dumps and backups
+backups/
+*.dump
+*.sql.gz
+
+# Editor
+.idea/
+*.swp
