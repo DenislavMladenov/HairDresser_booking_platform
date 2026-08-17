@@ -3,10 +3,13 @@ import { IsEmail, IsISO8601, IsOptional, IsString, IsUUID, Matches, MaxLength, M
 import type { CreateBookingRequest } from '@booking/shared';
 
 /**
- * Permissive enough for international and local formats, strict enough to reject
- * free text. Six to twenty digits with optional separators.
+ * Permissive enough for the formats people actually type, strict enough to
+ * reject free text. The lookahead requires between 6 and 15 digits in total,
+ * and the body allows only digits, spaces, dashes and parentheses, with an
+ * optional leading plus. Accepts "0888123456", "+359 88 812 3456" and
+ * "(02) 123 4567"; rejects "call me" and "12".
  */
-export const PHONE_PATTERN = /^\+?[\d][\d\s\-()]{4,19}$/;
+export const PHONE_PATTERN = /^(?=(?:\D*\d){6,15}\D*$)\+?[\d\s\-()]+$/;
 
 export class CreateBookingDto implements CreateBookingRequest {
   @ApiProperty({ format: 'uuid' })

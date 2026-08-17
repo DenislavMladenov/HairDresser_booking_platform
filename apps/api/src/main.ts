@@ -1,13 +1,10 @@
 import 'reflect-metadata';
-import { Logger, ValidationPipe, type LogLevel } from '@nestjs/common';
+import { Logger, type LogLevel } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
-import type { NextFunction, Request, Response } from 'express';
-import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { CsrfCookieMiddleware } from './common/security/csrf.middleware';
+import { configureApp } from './app-setup';
 import { AppConfig } from './config/app-config';
 
 const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log', 'debug', 'verbose'];
@@ -25,47 +22,7 @@ async function bootstrap(): Promise<void> {
     logger: enabledLogLevels(config.logLevel),
   });
 
-  app.setGlobalPrefix('api');
-
-  if (config.trustProxy) {
-    // Behind Caddy the client IP arrives in X-Forwarded-For; rate limiting is
-    // useless without this.
-    app.set('trust proxy', 1);
-  }
-
-  app.use(
-    helmet({
-      // The API only returns JSON, so a restrictive default policy is free.
-      contentSecurityPolicy: false,
-      crossOriginResourcePolicy: { policy: 'same-site' },
-    }),
-  );
-
-  // The session cookie is signed, so cookie-parser needs the secret.
-  app.use(cookieParser(config.sessionSecret));
-
-  const csrfCookie = app.get(CsrfCookieMiddleware);
-  app.use((request: Request, response: Response, next: NextFunction) =>
-    csrfCookie.use(request, response, next),
-  );
-
-  app.enableCors({
-    origin: config.allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      // Query and param values are strings; DTOs opt into conversion with
-      // @Type so nothing is coerced by accident.
-      transformOptions: { enableImplicitConversion: false },
-    }),
-  );
-
+  configureApp(app, config);
   app.enableShutdownHooks();
 
   if (config.swaggerEnabled) {
@@ -77,7 +34,7 @@ async function bootstrap(): Promise<void> {
           'Public booking endpoints and the authenticated admin API. Admin endpoints require a session cookie.',
         )
         .setVersion('1.0')
-        .addCookieAuth('barber_session')
+        .addCookieAuth(config.sessionCookieName)
         .build(),
     );
 

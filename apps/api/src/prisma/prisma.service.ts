@@ -16,7 +16,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         connectionTimeoutMillis: 5_000,
         max: 10,
       }),
-      log: config.isProduction ? ['warn', 'error'] : ['warn', 'error'],
+      // Silent in tests: suites deliberately trigger constraint violations and
+      // the expected errors would drown the actual results.
+      log: config.isTest ? [] : ['warn', 'error'],
     });
   }
 
