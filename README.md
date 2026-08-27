@@ -133,14 +133,108 @@ password and session secret are generated on first start, migrations are applied
 by the API as it starts, and the app answers on port 80 at whatever address the
 host has. Set `DOMAIN` to a real hostname when you want automatic HTTPS.
 
+### From nothing to running, step by step
+
+Written for a fresh Rocky, Alma or RHEL machine. For Debian or Ubuntu only the
+first two steps differ; see [docs/deployment.md](docs/deployment.md).
+
+Install Docker, then log out and back in so the group membership applies:
+
+```bash
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+If `config-manager --add-repo` is rejected, the machine has dnf5 and the form is
+`sudo dnf config-manager addrepo --from-repofile=<the same url>`.
+
+Open port 80 in firewalld, which is enabled by default on this family, and check
+that nothing already holds it:
+
+```bash
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --reload
+sudo ss -ltnp | grep :80        # should print nothing
+```
+
+SELinux needs no attention: the stack uses only named volumes, so there is
+nothing to relabel.
+
+Fetch the compose file and start:
+
+```bash
+sudo mkdir -p /opt/booking && sudo chown "$USER":"$USER" /opt/booking
+cd /opt/booking
+curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
+
+docker compose up -d
+docker compose ps               # wait for api and caddy to report healthy
+```
+
+The first start pulls about 190 MB, generates the credentials and applies the
+migrations by itself.
+
+Add the baseline schedule and your account:
+
+```bash
+docker compose exec api booking seed
+
+read -rsp 'Password: ' PW && echo
+docker compose exec -e ADMIN_EMAIL='you@example.com' -e ADMIN_PASSWORD="$PW" \
+  api booking bootstrap-admin
+unset PW
+```
+
+The password must be at least 12 characters. `read -rsp` keeps it out of your
+shell history, and the script reads it from the environment rather than an
+argument, which would be visible in the process list.
+
+Check it, and find the address to open:
+
+```bash
+curl -fsS http://localhost/api/health     # {"status":"ok","database":"up"}
+hostname -I
+```
+
+From another machine on the network, the booking page is at `http://<address>`
+and the dashboard at `http://<address>/admin/login`.
+
+One thing to do first in the dashboard: open Services and add the real ones. The
+seed deliberately creates no example services in production, and until at least
+one exists the public page has nothing to offer, which is expected rather than a
+fault.
+
+### Running it
+
+```bash
+cd /opt/booking
+
+docker compose logs -f api                     # follow what is happening
+docker compose logs --tail 50 api              # the first place to look on a fault
+docker compose restart api
+docker compose down                            # stops; data survives
+docker compose pull && docker compose up -d    # update to a new release
+```
+
+Everything comes back by itself after a reboot: the Docker service is enabled and
+the containers are declared `restart: unless-stopped`.
+
+To pin an exact build instead of following `latest`, create a `.env` next to
+`compose.yml` containing `IMAGE_TAG=1.1.1`. Nothing else belongs there; every
+other value has a working default. Do not copy the development `.env` from this
+repository to a server, since it points at a database on your own machine.
+
 New images are published by pushing a `v*` git tag, which builds them in GitHub
 Actions. To build rather than pull, layer the build overrides:
 `docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
 PostgreSQL publishes no ports and sits on a network the public-facing container
-cannot reach. See [docs/deployment.md](docs/deployment.md) for the full
-walkthrough and [docs/backup-and-restore.md](docs/backup-and-restore.md) for
-backups.
+cannot reach. See [docs/deployment.md](docs/deployment.md) for a domain with
+HTTPS, and [docs/backup-and-restore.md](docs/backup-and-restore.md) for backups,
+which are not automatic and matter as soon as the shop relies on this.
 
 ## Security
 
