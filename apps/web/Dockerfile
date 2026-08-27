@@ -25,6 +25,14 @@ RUN pnpm --filter @booking/shared build \
   && pnpm --filter @booking/web build
 
 FROM caddy:2-alpine AS runtime
+
+# The source label is what lets GitHub Container Registry associate the package
+# with the repository and inherit its visibility.
+LABEL org.opencontainers.image.source="https://github.com/DenislavMladenov/HairDresser_booking_platform"
+LABEL org.opencontainers.image.title="Barber booking web"
+LABEL org.opencontainers.image.description="Caddy serving the booking SPA and proxying the API"
+LABEL org.opencontainers.image.licenses="UNLICENSED"
+
 COPY --from=build /repo/apps/web/dist /srv
 COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
 

@@ -90,6 +90,8 @@ The values that matter in production:
 | `SESSION_SECRET`    | generated above, at least 32 characters                  |
 | `BUSINESS_TIMEZONE` | `Europe/Sofia`                                           |
 | `ENABLE_SWAGGER`    | `false`                                                  |
+| `IMAGE_REGISTRY`    | `ghcr.io/denislavmladenov`                               |
+| `IMAGE_TAG`         | `latest`, or a commit tag to pin the deploy              |
 
 `.env` is not committed and must never be. Keep a copy in your password manager;
 losing `POSTGRES_PASSWORD` means losing access to the data, and rotating
@@ -97,14 +99,32 @@ losing `POSTGRES_PASSWORD` means losing access to the data, and rotating
 
 ## 5. Start the stack
 
+[compose.yml](../compose.yml) deploys pre-built images, so the server compiles
+nothing. Building needs 1 to 2 GB of RAM and is by far the heaviest thing that
+would otherwise happen on the VM.
+
+The images are private, so authenticate first. Use a GitHub personal access
+token with only the `read:packages` scope, not one that can write:
+
 ```bash
-docker compose up -d --build
+echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u DenislavMladenov --password-stdin
+
+docker compose pull
+docker compose up -d
 docker compose ps
 docker compose logs -f caddy   # watch the certificate being issued
 ```
 
 The API applies pending migrations on start, so there is no separate migration
-step. `docker compose up -d` after a code change is the whole deployment.
+step. Publishing new images and running `docker compose pull && docker compose up -d`
+is the whole deployment.
+
+Building on the server instead is still supported, if you would rather not use a
+registry. It needs the repository present and enough free memory:
+
+```bash
+docker compose -f compose.yml -f compose.build.yml up -d --build
+```
 
 If you want to rehearse certificate issuance without burning rate limits,
 uncomment the `acme_ca` staging line in [docker/caddy/Caddyfile](../docker/caddy/Caddyfile)
@@ -150,14 +170,34 @@ nc -zv booking.example.com 5432
 nc -zv booking.example.com 3000
 ```
 
+## Publishing new images
+
+From your development machine, not the server. Log in with a token that has
+`write:packages`, then:
+
+```bash
+./scripts/publish-images.sh            # tags with the current commit, plus latest
+./scripts/publish-images.sh v1.1.0     # or an explicit version
+```
+
+The script refuses to run without credentials, warns if the working tree is
+dirty, and prints the tag to pin on the server.
+
+Pushing a `v*` git tag does the same thing through GitHub Actions, which is worth
+preferring because it does not depend on one particular laptop. See
+[.github/workflows/publish-images.yml](../.github/workflows/publish-images.yml).
+
 ## Updating
 
 ```bash
 cd /opt/booking
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 docker compose logs -f api
 ```
+
+Note there is no `git pull` here: the server holds only `compose.yml` and `.env`,
+and the code arrives inside the images.
 
 Take a database backup first if the update includes migrations. Migrations here
 are additive, but a snapshot costs nothing:
@@ -166,8 +206,20 @@ are additive, but a snapshot costs nothing:
 ./scripts/backup-database.sh
 ```
 
-To roll back application code, check out the previous commit and rebuild.
-Rolling back a migration is not automatic; restore from a backup instead.
+## Rolling back
+
+Because every push is also tagged with its commit, going back is a matter of
+pinning the previous tag:
+
+```bash
+sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=1a2b3c4/' .env
+docker compose pull
+docker compose up -d
+```
+
+That covers application code. A migration is not rolled back by pinning an older
+image, since the schema change has already been applied; restore from a backup if
+a migration itself is the problem.
 
 ## Operating notes
 

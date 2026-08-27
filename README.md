@@ -119,13 +119,23 @@ pnpm test:integration     # 106 integration tests, needs pnpm db:up
 ## Deploying
 
 See [docs/deployment.md](docs/deployment.md) for the full walkthrough, and
-[docs/backup-and-restore.md](docs/backup-and-restore.md) for backups. In short:
+[docs/backup-and-restore.md](docs/backup-and-restore.md) for backups.
+
+The server runs pre-built images and compiles nothing, so it needs only Docker,
+`compose.yml` and `.env` — no source checkout:
 
 ```bash
-cp .env.example .env      # set DOMAIN, ACME_EMAIL, APP_URL and the secrets
-docker compose up -d --build
-docker compose exec api sh -c 'ADMIN_EMAIL=... ADMIN_PASSWORD=... node dist/scripts/bootstrap-admin.js'
+docker login ghcr.io                  # images are private
+docker compose pull
+docker compose up -d
+docker compose exec -e ADMIN_EMAIL=... -e ADMIN_PASSWORD=... \
+  api node dist/scripts/bootstrap-admin.js
 ```
+
+Publish new images from a development machine with
+`./scripts/publish-images.sh`, or by pushing a `v*` git tag, which builds them in
+GitHub Actions instead. To build on the server anyway, layer the build overrides:
+`docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
 Caddy obtains a certificate on first start. PostgreSQL publishes no ports and
 sits on a network the public-facing container cannot reach.

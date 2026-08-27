@@ -38,6 +38,13 @@ FROM node:24-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
+# The source label is what lets GitHub Container Registry associate the package
+# with the repository and inherit its visibility.
+LABEL org.opencontainers.image.source="https://github.com/DenislavMladenov/HairDresser_booking_platform"
+LABEL org.opencontainers.image.title="Barber booking API"
+LABEL org.opencontainers.image.description="NestJS REST API for the barber shop booking platform"
+LABEL org.opencontainers.image.licenses="UNLICENSED"
+
 # tini reaps zombies and forwards signals, so Nest's shutdown hooks actually run.
 RUN apk add --no-cache tini
 

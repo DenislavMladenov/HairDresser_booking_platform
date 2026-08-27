@@ -1,6 +1,15 @@
 # Production stack for a Debian VM: PostgreSQL, the API, and Caddy in front.
 #
-#   docker compose up -d --build
+# This file deploys pre-built images and needs no source code, so the server only
+# ever holds this file and .env:
+#
+#   docker login ghcr.io
+#   docker compose pull
+#   docker compose up -d
+#
+# To build the images instead of pulling them, add the build overrides:
+#
+#   docker compose -f compose.yml -f compose.build.yml up -d --build
 #
 # Only Caddy publishes ports. PostgreSQL sits on a network Caddy cannot reach, so
 # it is unreachable both from the internet and from the public-facing container.
@@ -33,9 +42,7 @@ services:
           memory: 1g
 
   api:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -64,9 +71,7 @@ services:
           memory: 512m
 
   caddy:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+    image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in .env}
