@@ -141,18 +141,32 @@ starts everything at once merely costs a few seconds.
 
 Which Compose provider. Either works, but they differ in how much of the file
 they honour. `podman-compose` is a separate Python implementation and ignores
-some keys. Running the real Compose against Podman's socket gives exact parity:
+some keys. `podman compose` instead delegates to the real Compose plugin when one
+is installed, which gives exact parity with what was tested. Either way the
+socket has to be running, and this is the step most easily missed:
 
 ```bash
 sudo dnf -y install podman
+
+# rootless, which is the usual choice
+systemctl --user enable --now podman.socket
+
+# rootful
 sudo systemctl enable --now podman.socket
-export DOCKER_HOST=unix:///run/podman/podman.sock
-docker compose up -d
 ```
 
-Note that `docker compose` here means the official Compose v2 plugin, not the
+Then `podman compose up -d` behaves like `docker compose up -d`. Without the
+socket it fails with `failed to connect to the docker API at
+unix:///run/user/1000/podman/podman.sock`, which reads like a Docker problem but
+is not one.
+
+Note that the real Compose plugin means the official Compose v2 binary, not the
 `docker-compose` package in the distribution repositories, which is the old
 Python v1 and does not understand this file.
+
+To silence the provider banner on every command, add
+`compose_warning_logs = false` under `[engine]` in
+`~/.config/containers/containers.conf`.
 
 Unprivileged ports. Rootless Podman cannot bind below 1024. Either publish a
 higher port, which the app handles because it derives its expected origin from
@@ -183,6 +197,34 @@ sudo systemctl enable --now podman-restart.service
 Reboot once and confirm the stack came back before considering the deployment
 finished. For something long-lived, generating proper units with
 `podman generate systemd` or Quadlet is sturdier than the restart service.
+
+### If containers fail to start with an nftables error
+
+```
+netavark (exit code 1): nftables error: "nft" did not return successfully while applying ruleset
+```
+
+Podman's network backend could not install its rules. Normal on a kernel with
+incomplete nftables support, such as WSL, and unusual on a real RHEL host where
+nftables is the default. Switch the driver in
+`~/.config/containers/containers.conf`:
+
+```ini
+[network]
+firewall_driver = "iptables"
+```
+
+Network isolation is unaffected, which is worth confirming rather than assuming:
+with this driver in place, the database remained unreachable from the host and
+from the Caddy container, while the API could still reach it.
+
+### What was verified under Podman
+
+Rootless Podman 5.8 with the real Compose plugin, publishing port 8080: secrets
+generated on first start, migrations applied, the app served, `podman compose
+exec api booking seed` and the admin bootstrap both working, login succeeding and
+the session surviving the next request, and the data network still isolating
+PostgreSQL from the public-facing container.
 
 ## Local network only, without a domain
 

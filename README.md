@@ -209,28 +209,33 @@ fault.
 
 ### With Podman instead of Docker
 
-Podman runs this stack. Nothing in it depends on being started in a particular
-order: each container waits for what it needs, so implementations that ignore
-`depends_on` conditions still bring everything up.
+Runs the same, and was tested rootless on Podman 5.8. Nothing in the stack depends
+on being started in a particular order: each container waits for what it needs.
 
-Two differences to know about. Rootless Podman cannot bind ports below 1024, so
-put this in a `.env` next to `compose.yml` and open 8080 instead of 80:
+```bash
+sudo dnf -y install podman
+systemctl --user enable --now podman.socket    # easiest step to forget
 
-```ini
-HTTP_PORT=8080
+# Rootless cannot bind ports below 1024.
+printf 'HTTP_PORT=8080\n' > .env
+
+podman compose up -d
+podman compose exec api booking seed
 ```
 
-And rootless containers do not return after a reboot on their own:
+The app is then on port 8080 rather than 80, which it handles by itself because it
+derives its expected origin from the request.
+
+Rootless containers do not come back after a reboot on their own:
 
 ```bash
 loginctl enable-linger "$USER"
 systemctl --user enable --now podman-restart.service
 ```
 
-Then the commands are the same with `podman-compose` in place of
-`docker compose`, for example `podman-compose exec api booking seed`. See
-[docs/deployment.md](docs/deployment.md) for choosing a Compose provider, which
-is the one thing worth getting right.
+If containers fail with `netavark ... nftables error`, the kernel has incomplete
+nftables support, which is typical in WSL. That and the choice of Compose provider
+are covered in [docs/deployment.md](docs/deployment.md).
 
 ### Running it
 
