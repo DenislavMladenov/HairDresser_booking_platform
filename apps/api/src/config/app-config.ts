@@ -41,6 +41,19 @@ export class AppConfig {
     return this.env.APP_URL;
   }
 
+  /**
+   * Whether the application is actually reached over HTTPS, which is what the
+   * Secure cookie flag must follow. Deriving it from NODE_ENV instead would break
+   * a deployment served over plain HTTP, such as one reachable only on a local
+   * network: browsers withhold Secure cookies from insecure origins, so the
+   * session would be discarded immediately after signing in. localhost is the
+   * one exception browsers make, which is why this only shows up once the app is
+   * opened from another machine.
+   */
+  get servedOverHttps(): boolean {
+    return this.env.APP_URL.startsWith('https://');
+  }
+
   /** Browser origins allowed to call the API, including the app's own origin. */
   get allowedOrigins(): string[] {
     const configured = this.env.CORS_ORIGINS.split(',')

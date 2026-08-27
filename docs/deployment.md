@@ -43,6 +43,41 @@ sudo usermod -aG docker "$USER"
 
 Log out and back in for the group change to apply, then check with `docker info`.
 
+## Local network only, without a domain
+
+If the shop's machine should serve the app on the local network rather than the
+internet, skip DNS and certificates and set these three values in `.env`:
+
+```ini
+# Answer on port 80 for any hostname, so the IP, the machine name and localhost
+# all work. No certificate is requested.
+DOMAIN=:80
+
+# Must match what the browser shows, because the API checks the request Origin.
+APP_URL=http://192.168.1.50
+
+# Any other address you also open the app from.
+CORS_ORIGINS=http://localhost,http://barber.local
+```
+
+Then continue from step 5; steps 3 and 4 about DNS and certificates do not apply.
+
+Two things behave differently over plain HTTP. Cookies are not marked Secure,
+because a browser refuses to send Secure cookies to an insecure origin and the
+session would be dropped right after signing in; the API logs a warning at start
+so this is never silent. And traffic is unencrypted, which is acceptable on a
+trusted local network but means anyone on that network can read the customer
+details in transit.
+
+Note that `http://localhost` is a special case: browsers treat it as trusted, so
+a stack configured for HTTPS still works when opened on the machine itself. The
+problem only appears from a second device, which is worth knowing before
+concluding that login is broken.
+
+If you later want encryption without a public domain, `tls internal` in the
+[Caddyfile](../docker/caddy/Caddyfile) issues a certificate from Caddy's own
+authority. Browsers warn once per device unless you install its root certificate.
+
 ## 3. DNS and firewall
 
 Point an A record (and AAAA if you have IPv6) at the VM. Certificate issuance
