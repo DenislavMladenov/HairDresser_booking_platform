@@ -207,6 +207,31 @@ seed deliberately creates no example services in production, and until at least
 one exists the public page has nothing to offer, which is expected rather than a
 fault.
 
+### With Podman instead of Docker
+
+Podman runs this stack. Nothing in it depends on being started in a particular
+order: each container waits for what it needs, so implementations that ignore
+`depends_on` conditions still bring everything up.
+
+Two differences to know about. Rootless Podman cannot bind ports below 1024, so
+put this in a `.env` next to `compose.yml` and open 8080 instead of 80:
+
+```ini
+HTTP_PORT=8080
+```
+
+And rootless containers do not return after a reboot on their own:
+
+```bash
+loginctl enable-linger "$USER"
+systemctl --user enable --now podman-restart.service
+```
+
+Then the commands are the same with `podman-compose` in place of
+`docker compose`, for example `podman-compose exec api booking seed`. See
+[docs/deployment.md](docs/deployment.md) for choosing a Compose provider, which
+is the one thing worth getting right.
+
 ### Running it
 
 ```bash

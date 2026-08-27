@@ -127,6 +127,63 @@ common:
 sudo ss -ltnp | grep :80
 ```
 
+## Running it with Podman
+
+Podman is a drop-in engine for this stack, and on the RHEL family it is the one
+already in the distribution's repositories. The application does not notice the
+difference; three things around it do.
+
+Start order. Compose implementations disagree about `depends_on` conditions, and
+`podman-compose` has historically ignored them. The stack does not rely on them:
+PostgreSQL waits for the generated password before starting, and the API retries
+the database until it answers. Both paths are tested, so an implementation that
+starts everything at once merely costs a few seconds.
+
+Which Compose provider. Either works, but they differ in how much of the file
+they honour. `podman-compose` is a separate Python implementation and ignores
+some keys. Running the real Compose against Podman's socket gives exact parity:
+
+```bash
+sudo dnf -y install podman
+sudo systemctl enable --now podman.socket
+export DOCKER_HOST=unix:///run/podman/podman.sock
+docker compose up -d
+```
+
+Note that `docker compose` here means the official Compose v2 plugin, not the
+`docker-compose` package in the distribution repositories, which is the old
+Python v1 and does not understand this file.
+
+Unprivileged ports. Rootless Podman cannot bind below 1024. Either publish a
+higher port, which the app handles because it derives its expected origin from
+the request:
+
+```ini
+# .env
+HTTP_PORT=8080
+```
+
+or lower the threshold system-wide with
+`sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80`, or run rootful with
+`sudo`.
+
+Surviving a reboot. This is the difference most likely to be discovered late.
+Rootful Podman needs the restart service enabled; rootless additionally needs
+lingering, or the user's containers are killed at logout:
+
+```bash
+# rootless
+loginctl enable-linger "$USER"
+systemctl --user enable --now podman-restart.service
+
+# rootful
+sudo systemctl enable --now podman-restart.service
+```
+
+Reboot once and confirm the stack came back before considering the deployment
+finished. For something long-lived, generating proper units with
+`podman generate systemd` or Quadlet is sturdier than the restart service.
+
 ## Local network only, without a domain
 
 Nothing to configure: this is the default. Skip steps 3 and 4 entirely and go to

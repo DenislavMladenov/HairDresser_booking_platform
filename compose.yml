@@ -4,6 +4,11 @@
 #
 #   docker compose up -d
 #
+# Podman works too. Nothing here depends on being started in a particular order,
+# so implementations that ignore `depends_on` conditions still bring the stack up;
+# containers wait for what they need instead. Rootless Podman cannot bind port 80,
+# so set HTTP_PORT to something above 1024. See the README.
+#
 # and the app answers on port 80 for whatever address that host has. Secrets are
 # generated on first start and kept in a volume. There is no .env to write, no
 # domain to declare and no origin to whitelist, because the API derives the
@@ -74,6 +79,25 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       # Deterministic collation regardless of the host locale.
       POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+    # Waits for the generated password instead of assuming the generator already
+    # ran. Podman's Compose implementations do not all honour the condition
+    # below, and starting in the wrong order should cost a few seconds rather
+    # than fail.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        waited=0
+        while [ ! -s /run/secrets/postgres_password ]; do
+          if [ "$$waited" -ge 120 ]; then
+            echo 'Still no generated password; exiting so the restart policy tries again.' >&2
+            exit 1
+          fi
+          [ "$$waited" -eq 0 ] && echo 'Waiting for the generated database password...'
+          sleep 2
+          waited=$$((waited + 2))
+        done
+        exec docker-entrypoint.sh postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - secrets:/run/secrets:ro
@@ -89,10 +113,9 @@ services:
       retries: 10
       start_period: 30s
     # A 4 GB host also runs the API and Caddy; keep Postgres from taking it all.
-    deploy:
-      resources:
-        limits:
-          memory: 1g
+    # mem_limit rather than deploy.resources, because podman-compose honours the
+    # former and ignores the latter.
+    mem_limit: 1g
 
   api:
     image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-api:${IMAGE_TAG:-latest}
@@ -133,10 +156,7 @@ services:
     networks:
       - data
       - edge
-    deploy:
-      resources:
-        limits:
-          memory: 512m
+    mem_limit: 512m
 
   caddy:
     image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-web:${IMAGE_TAG:-latest}
@@ -163,10 +183,7 @@ services:
         condition: service_started
     networks:
       - edge
-    deploy:
-      resources:
-        limits:
-          memory: 256m
+    mem_limit: 256m
 
 volumes:
   postgres-data:
