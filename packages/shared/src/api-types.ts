@@ -22,11 +22,6 @@ export interface PublicService {
   currency: string;
 }
 
-export interface AvailabilityQuery {
-  serviceId: string;
-  date: IsoDate;
-}
-
 export interface AvailabilitySlot {
   /** Slot start as an absolute instant. */
   startTime: IsoDateTime;

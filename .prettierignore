@@ -3,4 +3,4 @@ dist
 coverage
 pnpm-lock.yaml
 apps/api/prisma/migrations
-AI promt.txt
+apps/api/src/generated

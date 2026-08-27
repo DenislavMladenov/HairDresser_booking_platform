@@ -232,20 +232,30 @@ nc -zv <server> 3000
 
 ## Publishing new images
 
-From your development machine, not the server. Log in with a token that has
-`write:packages`, then:
+GitHub Actions builds and publishes them, so releases do not depend on whichever
+machine happens to have the source, and no access token is needed: the workflow
+authenticates with the one GitHub provides.
 
 ```bash
-./scripts/publish-images.sh            # tags with the current commit, plus latest
-./scripts/publish-images.sh v1.1.0     # or an explicit version
+git tag -a v1.1.0 -m 'What changed'
+git push origin v1.1.0
 ```
 
-The script refuses to run without credentials, warns if the working tree is
-dirty, and prints the tag to pin on the server.
-
-Pushing a `v*` git tag does the same thing through GitHub Actions, which is worth
-preferring because it does not depend on one particular laptop. See
+That produces `1.1.0`, `1.1`, the short commit sha and `latest`. Progress and any
+failure are visible under the repository's Actions tab. The workflow can also be
+started by hand from there, without a tag. See
 [.github/workflows/publish-images.yml](../.github/workflows/publish-images.yml).
+
+To build the images on your own machine instead, layer the build overrides and
+push them yourself. This needs a token with `write:packages`:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <username> --password-stdin
+IMAGE_TAG=$(git rev-parse --short HEAD) \
+  docker compose -f compose.yml -f compose.build.yml build
+IMAGE_TAG=$(git rev-parse --short HEAD) \
+  docker compose -f compose.yml -f compose.build.yml push
+```
 
 ## Updating
 

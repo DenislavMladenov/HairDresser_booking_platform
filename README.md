@@ -133,9 +133,8 @@ password and session secret are generated on first start, migrations are applied
 by the API as it starts, and the app answers on port 80 at whatever address the
 host has. Set `DOMAIN` to a real hostname when you want automatic HTTPS.
 
-Publish new images from a development machine with `./scripts/publish-images.sh`,
-or by pushing a `v*` git tag, which builds them in GitHub Actions instead. To
-build on the server rather than pull, layer the build overrides:
+New images are published by pushing a `v*` git tag, which builds them in GitHub
+Actions. To build rather than pull, layer the build overrides:
 `docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
 PostgreSQL publishes no ports and sits on a network the public-facing container

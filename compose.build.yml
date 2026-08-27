@@ -7,7 +7,8 @@
 #   docker compose -f compose.yml -f compose.build.yml build
 #   docker compose -f compose.yml -f compose.build.yml push
 #
-# scripts/publish-images.sh wraps both with sensible tagging.
+# Set IMAGE_TAG so the result is traceable to a commit. Normally releases are
+# built by GitHub Actions instead; see .github/workflows/publish-images.yml.
 services:
   api:
     build:
