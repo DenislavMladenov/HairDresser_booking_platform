@@ -168,18 +168,33 @@ To silence the provider banner on every command, add
 `compose_warning_logs = false` under `[engine]` in
 `~/.config/containers/containers.conf`.
 
-Unprivileged ports. Rootless Podman cannot bind below 1024. Either publish a
-higher port, which the app handles because it derives its expected origin from
-the request:
+Unprivileged ports. Rootless Podman cannot bind below 1024. Both published ports
+have to move, not only the one you plan to use: Caddy publishes 443 as well, and
+the container fails to start on that alone even when serving plain HTTP.
 
 ```ini
 # .env
 HTTP_PORT=8080
+HTTPS_PORT=8443
 ```
 
-or lower the threshold system-wide with
-`sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80`, or run rootful with
+The application does not care which port it is reached on, because it derives its
+expected origin from the request. The alternatives are lowering the threshold with
+`sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80`, or running rootful with
 `sudo`.
+
+A Compose provider also has to exist. Podman ships none of its own, and the
+error lists every path it searched; the first of them is in your home directory
+and needs no root:
+
+```bash
+mkdir -p ~/.docker/cli-plugins
+curl -fsSL -o ~/.docker/cli-plugins/docker-compose \
+  https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+chmod +x ~/.docker/cli-plugins/docker-compose
+```
+
+Use `docker-compose-linux-aarch64` on ARM.
 
 Surviving a reboot. This is the difference most likely to be discovered late.
 Rootful Podman needs the restart service enabled; rootless additionally needs

@@ -216,8 +216,16 @@ on being started in a particular order: each container waits for what it needs.
 sudo dnf -y install podman
 systemctl --user enable --now podman.socket    # easiest step to forget
 
-# Rootless cannot bind ports below 1024.
-printf 'HTTP_PORT=8080\n' > .env
+# Podman needs a Compose provider; this is the first path it looks in, and
+# needs no root.
+mkdir -p ~/.docker/cli-plugins
+curl -fsSL -o ~/.docker/cli-plugins/docker-compose \
+  https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+chmod +x ~/.docker/cli-plugins/docker-compose
+
+# Rootless cannot bind ports below 1024, and both published ports need moving,
+# not just the one you intend to use.
+printf 'HTTP_PORT=8080\nHTTPS_PORT=8443\n' > .env
 
 podman compose up -d
 podman compose exec api booking seed
