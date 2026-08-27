@@ -17,7 +17,9 @@ export const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
-  APP_URL: z.string().url(),
+  // No APP_URL: the allowed origin is derived from each request, so the same
+  // image runs on any host with no configuration. CORS_ORIGINS covers the
+  // unusual case of a client served from somewhere else.
   CORS_ORIGINS: z.string().default(''),
 
   BUSINESS_TIMEZONE: timezone.default('Europe/Sofia'),

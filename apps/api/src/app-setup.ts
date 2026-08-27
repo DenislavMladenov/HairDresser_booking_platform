@@ -40,11 +40,16 @@ export function configureApp(app: NestExpressApplication, config: AppConfig): vo
     csrfCookie.use(request, response, next),
   );
 
-  app.enableCors({
-    origin: config.allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  });
+  // The app and the API share an origin, so the browser never makes a
+  // cross-origin request and CORS is simply not involved. It is enabled only if
+  // someone has explicitly declared another origin.
+  if (config.extraAllowedOrigins.length > 0) {
+    app.enableCors({
+      origin: config.extraAllowedOrigins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    });
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({

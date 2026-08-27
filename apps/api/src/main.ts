@@ -49,14 +49,6 @@ async function bootstrap(): Promise<void> {
   logger.log(`API listening on port ${config.port} (${config.nodeEnv})`);
   logger.log(`Business timezone: ${config.timezone}`);
 
-  if (!config.servedOverHttps) {
-    // Legitimate for a deployment reachable only on a local network, but the
-    // consequence should never be a surprise.
-    logger.warn(
-      `APP_URL is ${config.appUrl}, so cookies are not marked Secure and traffic is not encrypted. Expected only for local or local-network access.`,
-    );
-  }
-
   if (config.swaggerEnabled) {
     logger.warn('Swagger UI is enabled at /api/docs');
   }

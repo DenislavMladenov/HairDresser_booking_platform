@@ -52,6 +52,7 @@ export class AuthController {
   @ApiTooManyRequestsResponse({ description: 'Too many login attempts' })
   async login(
     @Body() dto: LoginDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthenticatedUser> {
     const { user, session } = await this.auth.login(dto.email, dto.password);
@@ -59,7 +60,7 @@ export class AuthController {
     response.cookie(
       this.config.sessionCookieName,
       session.token,
-      sessionCookieOptions(this.config, session.maxAgeMs),
+      sessionCookieOptions(request, session.maxAgeMs),
     );
 
     return user;
@@ -78,7 +79,7 @@ export class AuthController {
       await this.auth.logout(token);
     }
 
-    response.clearCookie(this.config.sessionCookieName, clearedSessionCookieOptions(this.config));
+    response.clearCookie(this.config.sessionCookieName, clearedSessionCookieOptions(request));
   }
 
   @Get('me')

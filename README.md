@@ -118,27 +118,30 @@ pnpm test:integration     # 106 integration tests, needs pnpm db:up
 
 ## Deploying
 
-See [docs/deployment.md](docs/deployment.md) for the full walkthrough, and
-[docs/backup-and-restore.md](docs/backup-and-restore.md) for backups.
-
-The server runs pre-built images and compiles nothing, so it needs only Docker,
-`compose.yml` and `.env` — no source checkout:
+Any host with Docker, in an empty directory holding only `compose.yml`:
 
 ```bash
-docker login ghcr.io                  # images are private
-docker compose pull
+docker login ghcr.io          # the images are private
 docker compose up -d
-docker compose exec -e ADMIN_EMAIL=... -e ADMIN_PASSWORD=... \
-  api node dist/scripts/bootstrap-admin.js
+
+docker compose exec api booking seed
+docker compose exec -e ADMIN_EMAIL=... -e ADMIN_PASSWORD=... api booking bootstrap-admin
 ```
 
-Publish new images from a development machine with
-`./scripts/publish-images.sh`, or by pushing a `v*` git tag, which builds them in
-GitHub Actions instead. To build on the server anyway, layer the build overrides:
+That is all of it. No `.env`, no domain, no origin configuration: the database
+password and session secret are generated on first start, migrations are applied
+by the API as it starts, and the app answers on port 80 at whatever address the
+host has. Set `DOMAIN` to a real hostname when you want automatic HTTPS.
+
+Publish new images from a development machine with `./scripts/publish-images.sh`,
+or by pushing a `v*` git tag, which builds them in GitHub Actions instead. To
+build on the server rather than pull, layer the build overrides:
 `docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
-Caddy obtains a certificate on first start. PostgreSQL publishes no ports and
-sits on a network the public-facing container cannot reach.
+PostgreSQL publishes no ports and sits on a network the public-facing container
+cannot reach. See [docs/deployment.md](docs/deployment.md) for the full
+walkthrough and [docs/backup-and-restore.md](docs/backup-and-restore.md) for
+backups.
 
 ## Security
 

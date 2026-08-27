@@ -54,9 +54,10 @@ describe('Authentication', () => {
       expect(response.body.code).toBe(ApiErrorCode.CSRF_FAILED);
     });
 
-    it('rejects a request from an origin that is not allowed', async () => {
+    it('rejects a request from a foreign origin', async () => {
       const response = await client
         .post('/api/auth/login')
+        .set('Host', 'booking.example.test')
         .set('Origin', 'https://attacker.example.com')
         .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
         .expect(403);
@@ -64,12 +65,30 @@ describe('Authentication', () => {
       expect(response.body.code).toBe(ApiErrorCode.CSRF_FAILED);
     });
 
-    it('allows a request from the configured application origin', async () => {
+    /**
+     * Same-origin is derived from the request, not configured, which is what lets
+     * one image serve localhost, a LAN address or a domain with no setup. These
+     * hostnames are arbitrary on purpose: none of them is known to the server.
+     */
+    it.each(['booking.example.test', 'barber.local', '192.168.1.50', 'localhost:8080'])(
+      'accepts a request whose origin matches the host it addressed (%s)',
+      async (host) => {
+        await client
+          .post('/api/auth/login')
+          .set('Host', host)
+          .set('Origin', `http://${host}`)
+          .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
+          .expect(200);
+      },
+    );
+
+    it('rejects the right host over the wrong scheme', async () => {
       await client
         .post('/api/auth/login')
-        .set('Origin', context.config.appUrl)
+        .set('Host', 'booking.example.test')
+        .set('Origin', 'https://booking.example.test')
         .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
-        .expect(200);
+        .expect(403);
     });
 
     it('does not require a token for safe methods', async () => {

@@ -1,7 +1,33 @@
 # Deployment
 
-Target: a Debian VM on Proxmox VE, running Docker Compose. 2 vCPU, 4 GB RAM and
-50 GB of disk is enough; the stack idles at a few hundred megabytes.
+## The short version
+
+On any host with Docker, in an empty directory:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
+docker login ghcr.io                 # the images are private
+docker compose up -d
+
+docker compose exec api booking seed
+docker compose exec -e ADMIN_EMAIL='you@example.com' -e ADMIN_PASSWORD='...' \
+  api booking bootstrap-admin
+```
+
+That is the whole deployment. The app answers on port 80 at whatever address the
+host has, whether that is `localhost`, `192.168.1.50` or a hostname. There is no
+`.env` to write, no domain to declare and no origin to whitelist:
+
+- the database password and the session secret are generated on first start and
+  kept in a volume,
+- migrations are applied by the API as it starts,
+- the expected browser origin is derived from each request, so the same image
+  works on every host,
+- cookies are marked Secure only when the request actually arrived over HTTPS,
+  because a browser would otherwise refuse to send them back.
+
+Everything below is for the cases that need more: a public domain with HTTPS, a
+VM built from scratch, backups, or publishing your own images.
 
 ```mermaid
 flowchart TD
@@ -11,6 +37,21 @@ flowchart TD
         Api -->|data network, internal| Postgres[(PostgreSQL)]
     end
 ```
+
+## Going public with a domain
+
+Two values, and only when you want a certificate:
+
+```ini
+DOMAIN=booking.example.com
+ACME_EMAIL=you@example.com
+```
+
+Caddy then obtains and renews a certificate automatically, which requires public
+DNS pointing at the machine and ports 80 and 443 reachable. Cookies become Secure
+on their own, because the requests now arrive over HTTPS.
+
+Full VM setup follows.
 
 ## 1. Create the VM
 
@@ -45,38 +86,19 @@ Log out and back in for the group change to apply, then check with `docker info`
 
 ## Local network only, without a domain
 
-If the shop's machine should serve the app on the local network rather than the
-internet, skip DNS and certificates and set these three values in `.env`:
+Nothing to configure: this is the default. Skip steps 3 and 4 entirely and go to
+step 5. The app answers on port 80 for the machine's IP, its hostname and
+localhost alike, and login works from every one of them.
 
-```ini
-# Answer on port 80 for any hostname, so the IP, the machine name and localhost
-# all work. No certificate is requested.
-DOMAIN=:80
+One consequence is worth stating plainly. Traffic is unencrypted, which is
+usually fine on a trusted network but means anyone on it can read customer names
+and phone numbers in transit. Cookies are correspondingly not marked Secure,
+since a browser would refuse to send them back to an insecure origin.
 
-# Must match what the browser shows, because the API checks the request Origin.
-APP_URL=http://192.168.1.50
-
-# Any other address you also open the app from.
-CORS_ORIGINS=http://localhost,http://barber.local
-```
-
-Then continue from step 5; steps 3 and 4 about DNS and certificates do not apply.
-
-Two things behave differently over plain HTTP. Cookies are not marked Secure,
-because a browser refuses to send Secure cookies to an insecure origin and the
-session would be dropped right after signing in; the API logs a warning at start
-so this is never silent. And traffic is unencrypted, which is acceptable on a
-trusted local network but means anyone on that network can read the customer
-details in transit.
-
-Note that `http://localhost` is a special case: browsers treat it as trusted, so
-a stack configured for HTTPS still works when opened on the machine itself. The
-problem only appears from a second device, which is worth knowing before
-concluding that login is broken.
-
-If you later want encryption without a public domain, `tls internal` in the
-[Caddyfile](../docker/caddy/Caddyfile) issues a certificate from Caddy's own
-authority. Browsers warn once per device unless you install its root certificate.
+If you want encryption without a public domain, add `tls internal` inside the site
+block of the [Caddyfile](../docker/caddy/Caddyfile). Caddy then issues a
+certificate from its own authority; browsers warn once per device unless you
+install its root certificate.
 
 ## 3. DNS and firewall
 
@@ -97,40 +119,36 @@ Docker publishes ports by manipulating nftables directly, which can bypass ufw
 rules. The stack only publishes 80 and 443, which is what you want open anyway,
 and PostgreSQL publishes nothing at all.
 
-## 4. Get the code and configure it
+## 4. Configure, only if you need to
+
+The server needs `compose.yml` and nothing else:
 
 ```bash
-git clone <your-repository-url> /opt/booking
-cd /opt/booking
-cp .env.example .env
-chmod 600 .env
+sudo mkdir -p /opt/booking && cd /opt/booking
+sudo curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
 ```
 
-Generate the secrets on the VM and put them in `.env`:
+Add a `.env` beside it only to change a default. The ones that matter:
 
-```bash
-openssl rand -base64 36   # SESSION_SECRET
-openssl rand -base64 18   # POSTGRES_PASSWORD
-```
+| Variable            | When you need it                                           |
+| ------------------- | ---------------------------------------------------------- |
+| `DOMAIN`            | A public hostname, for automatic HTTPS. Defaults to `:80`. |
+| `ACME_EMAIL`        | With a real `DOMAIN`, for certificate expiry warnings.     |
+| `BUSINESS_TIMEZONE` | The shop is not in `Europe/Sofia`.                         |
+| `HTTP_PORT`         | Something already uses port 80 on the host.                |
+| `IMAGE_TAG`         | Pin a specific build instead of following `latest`.        |
+| `SESSION_TTL_DAYS`  | Sessions should last longer or shorter than a week.        |
 
-The values that matter in production:
+The database password and session secret are generated into the `secrets` volume
+on first start, so there is nothing to write down. If you would rather supply
+your own, set `POSTGRES_PASSWORD` and `SESSION_SECRET` before the first start and
+they are used instead; changing them later does not reach an already initialised
+database.
 
-| Variable            | Value                                                    |
-| ------------------- | -------------------------------------------------------- |
-| `DOMAIN`            | `booking.example.com`, the site address Caddy serves     |
-| `ACME_EMAIL`        | your address, for certificate expiry warnings            |
-| `APP_URL`           | `https://booking.example.com`, used for cookies and CORS |
-| `CORS_ORIGINS`      | usually empty; `APP_URL` is always allowed               |
-| `POSTGRES_PASSWORD` | generated above                                          |
-| `SESSION_SECRET`    | generated above, at least 32 characters                  |
-| `BUSINESS_TIMEZONE` | `Europe/Sofia`                                           |
-| `ENABLE_SWAGGER`    | `false`                                                  |
-| `IMAGE_REGISTRY`    | `ghcr.io/denislavmladenov`                               |
-| `IMAGE_TAG`         | `latest`, or a commit tag to pin the deploy              |
-
-`.env` is not committed and must never be. Keep a copy in your password manager;
-losing `POSTGRES_PASSWORD` means losing access to the data, and rotating
-`SESSION_SECRET` signs everyone out.
+Because those credentials live in a volume rather than a file, include the
+`secrets` volume in backups. A database restored next to a freshly generated
+password will not open. See
+[backup-and-restore.md](backup-and-restore.md).
 
 ## 5. Start the stack
 
@@ -169,14 +187,19 @@ first, then remove it and run `docker compose up -d --force-recreate caddy`.
 
 ```bash
 # Baseline working hours and booking policy.
-docker compose exec api node dist/scripts/seed.js
+docker compose exec api booking seed
 
 # The admin account. Use a long unique password from your password manager.
 docker compose exec \
   -e ADMIN_EMAIL='you@example.com' \
   -e ADMIN_PASSWORD='...' \
-  api node dist/scripts/bootstrap-admin.js
+  api booking bootstrap-admin
 ```
+
+`booking` is a small wrapper in the image that resolves the generated credentials
+before running the script, which `docker compose exec` would otherwise skip
+because it bypasses the entrypoint. `booking migrate` is also available, though
+the API already applies migrations as it starts.
 
 The password is read from the environment and never from an argument, because
 arguments are visible in the process list and in shell history. Prefix the
@@ -185,24 +208,26 @@ command with a space, or unset `HISTFILE`, if your shell records it.
 Re-running the bootstrap is safe. To change the password later, add
 `-e ADMIN_RESET_PASSWORD=true`; every active session is revoked.
 
-Then sign in at `https://booking.example.com/admin/login` and set the real
-services, opening hours and booking policy.
+Then sign in at `/admin/login` on whatever address the machine answers on, and set
+the real services, opening hours and booking policy.
 
 ## 7. Verify
 
+Replace the address with your domain, the machine's IP, or `localhost`.
+
 ```bash
-curl -fsS https://booking.example.com/api/health          # {"status":"ok","database":"up"}
-curl -fsS https://booking.example.com/api/services         # the catalogue
+curl -fsS http://localhost/api/health           # {"status":"ok","database":"up"}
+curl -fsS http://localhost/api/services          # the catalogue
 curl -fsS -o /dev/null -w '%{http_code}\n' \
-  https://booking.example.com/api/admin/bookings           # 401, as it should be
+  http://localhost/api/admin/bookings            # 401, as it should be
 ```
 
 Also confirm PostgreSQL is not reachable from outside:
 
 ```bash
 # From another machine. Both should fail to connect.
-nc -zv booking.example.com 5432
-nc -zv booking.example.com 3000
+nc -zv <server> 5432
+nc -zv <server> 3000
 ```
 
 ## Publishing new images

@@ -9,15 +9,30 @@ section at least once.
 
 ## What to back up
 
-| Data                        | Where               | How                           |
-| --------------------------- | ------------------- | ----------------------------- |
-| Appointments, config, users | PostgreSQL          | `pg_dump`, described below    |
-| TLS certificates            | `caddy-data` volume | Nothing; Caddy re-issues them |
-| Application code            | Git                 | Push to a remote              |
-| Secrets                     | `.env` on the VM    | Your password manager         |
+| Data                              | Where               | How                           |
+| --------------------------------- | ------------------- | ----------------------------- |
+| Appointments, config, users       | PostgreSQL          | `pg_dump`, described below    |
+| Database password, session secret | `secrets` volume    | Copy it out, described below  |
+| TLS certificates                  | `caddy-data` volume | Nothing; Caddy re-issues them |
+| Application code                  | Container images    | Already published             |
 
-`.env` is not in git by design. Without `POSTGRES_PASSWORD` a dump is still
-restorable, but keep the file safe anyway.
+The generated credentials matter more than they look. The database in
+`postgres-data` was initialised with that exact password, so pairing that volume
+with a freshly generated one will not open. Restoring a `pg_dump` into a new stack
+is unaffected, since the new stack generates a matching pair, but keeping the
+secrets means you can also recover by copying volumes.
+
+```bash
+# Copy the generated credentials out once and store them with your backups.
+docker run --rm -v booking_secrets:/secrets alpine \
+  sh -c 'cat /secrets/postgres_password; echo; cat /secrets/session_secret' \
+  > booking-secrets.txt
+chmod 600 booking-secrets.txt
+```
+
+To carry them to another host, set `POSTGRES_PASSWORD` and `SESSION_SECRET` in
+`.env` before its first start and those values are used instead of new ones.
+Keeping the session secret also means nobody is signed out by the move.
 
 ## Taking a backup
 

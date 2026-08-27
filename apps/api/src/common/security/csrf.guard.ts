@@ -47,10 +47,33 @@ export class CsrfGuard implements CanActivate {
       return;
     }
 
-    if (!this.config.allowedOrigins.includes(origin)) {
-      this.logger.warn(`Rejected ${request.method} from disallowed origin`);
-      throw ApiException.csrfFailed('Request origin is not allowed.');
+    if (origin === this.requestOrigin(request)) {
+      return;
     }
+
+    // Only needed when something genuinely lives on another origin. The normal
+    // deployment serves the app and the API from the same one.
+    if (this.config.extraAllowedOrigins.includes(origin)) {
+      return;
+    }
+
+    this.logger.warn(`Rejected ${request.method} from disallowed origin`);
+    throw ApiException.csrfFailed('Request origin is not allowed.');
+  }
+
+  /**
+   * The origin the browser actually addressed, rebuilt from the request.
+   *
+   * Deriving it instead of configuring it is what lets the same image run on any
+   * host: localhost, a LAN address or a public domain all work with no setup. It
+   * is also safe, because a browser sets Host from the URL it connects to and
+   * Origin from the page making the request. A page on another site therefore
+   * produces a mismatch, and it cannot forge either header.
+   */
+  private requestOrigin(request: Request): string {
+    // Express resolves both from X-Forwarded-* only when trust proxy is enabled,
+    // which is the case behind Caddy.
+    return `${request.protocol}://${request.get('host') ?? ''}`;
   }
 
   private assertMatchingToken(request: Request): void {

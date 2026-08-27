@@ -54,7 +54,11 @@ COPY --from=build /repo/apps/api/dist ./dist
 # Needed at start time to apply pending migrations.
 COPY --from=build /repo/apps/api/prisma ./prisma
 COPY --from=build /repo/apps/api/prisma.config.ts ./prisma.config.ts
-COPY --chmod=755 apps/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+COPY apps/api/docker/resolve-secrets.sh /usr/local/lib/booking/resolve-secrets.sh
+COPY --chmod=755 apps/api/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+# Operator commands: `docker compose exec api booking seed`
+COPY --chmod=755 apps/api/docker/booking.sh /usr/local/bin/booking
 
 # The node image ships an unprivileged user; nothing here needs root.
 USER node
@@ -65,5 +69,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 CMD ["node", "dist/main.js"]

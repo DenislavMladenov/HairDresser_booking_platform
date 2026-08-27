@@ -1,32 +1,85 @@
-# Production stack for a Debian VM: PostgreSQL, the API, and Caddy in front.
+# Production stack: PostgreSQL, the API, and Caddy in front.
 #
-# This file deploys pre-built images and needs no source code, so the server only
-# ever holds this file and .env:
+# Runs with no configuration at all. On any host:
 #
-#   docker login ghcr.io
-#   docker compose pull
 #   docker compose up -d
 #
-# To build the images instead of pulling them, add the build overrides:
+# and the app answers on port 80 for whatever address that host has. Secrets are
+# generated on first start and kept in a volume. There is no .env to write, no
+# domain to declare and no origin to whitelist, because the API derives the
+# expected origin from each request.
 #
-#   docker compose -f compose.yml -f compose.build.yml up -d --build
+# Set DOMAIN to a real hostname when you want a public deployment with automatic
+# HTTPS. Everything else in .env.example is optional tuning.
 #
 # Only Caddy publishes ports. PostgreSQL sits on a network Caddy cannot reach, so
 # it is unreachable both from the internet and from the public-facing container.
 name: booking
 
 services:
+  # Generates the database password and the session secret once, then exits.
+  # Values already supplied through the environment are used instead, so an
+  # existing deployment keeps its credentials.
+  init-secrets:
+    image: alpine:3.22
+    environment:
+      SEED_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      SEED_SESSION_SECRET: ${SESSION_SECRET:-}
+    volumes:
+      - secrets:/secrets
+    command:
+      - sh
+      - -c
+      - |
+        set -eu
+        # Characters that would need escaping in a connection string are removed.
+        generate() { head -c "$$1" /dev/urandom | base64 | tr -d '\n=+/'; }
+
+        if [ ! -f /secrets/postgres_password ]; then
+          if [ -n "$${SEED_POSTGRES_PASSWORD}" ]; then
+            printf '%s' "$${SEED_POSTGRES_PASSWORD}" > /secrets/postgres_password
+            echo 'database password taken from the environment'
+          else
+            generate 24 > /secrets/postgres_password
+            echo 'database password generated'
+          fi
+        fi
+
+        if [ ! -f /secrets/session_secret ]; then
+          if [ -n "$${SEED_SESSION_SECRET}" ]; then
+            printf '%s' "$${SEED_SESSION_SECRET}" > /secrets/session_secret
+            echo 'session secret taken from the environment'
+          else
+            generate 48 > /secrets/session_secret
+            echo 'session secret generated'
+          fi
+        fi
+
+        # PostgreSQL and the API run as different unprivileged users, so rather
+        # than guess at their user ids the files are readable inside the volume.
+        # That volume is mounted only into this stack's own containers, and each
+        # consumer would otherwise receive the same value as an environment
+        # variable, so this exposes nothing further.
+        chmod 444 /secrets/postgres_password /secrets/session_secret
+
+        echo 'secrets ready'
+    restart: 'no'
+
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:-booking}
+      POSTGRES_DB: ${POSTGRES_DB:-booking}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       # Deterministic collation regardless of the host locale.
       POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - secrets:/run/secrets:ro
+    depends_on:
+      init-secrets:
+        condition: service_completed_successfully
     networks:
       - data
     healthcheck:
@@ -35,7 +88,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    # A 4 GB VM also runs the API and Caddy; keep Postgres from taking it all.
+    # A 4 GB host also runs the API and Caddy; keep Postgres from taking it all.
     deploy:
       resources:
         limits:
@@ -48,17 +101,28 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       LOG_LEVEL: ${LOG_LEVEL:-log}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
-      APP_URL: ${APP_URL:?set APP_URL in .env}
+      # The entrypoint assembles DATABASE_URL from these unless one is supplied.
+      POSTGRES_USER: ${POSTGRES_USER:-booking}
+      POSTGRES_DB: ${POSTGRES_DB:-booking}
+      POSTGRES_HOST: postgres
+      DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      DATABASE_URL: ${DATABASE_URL:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      # Only for a client served from some other origin; normally empty, because
+      # the app and the API share one.
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       BUSINESS_TIMEZONE: ${BUSINESS_TIMEZONE:-Europe/Sofia}
       CURRENCY: ${CURRENCY:-BGN}
-      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
       SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-barber_session}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-7}
       ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
-      # Caddy is the only way in, so forwarded headers can be trusted.
+      # Caddy is the only way in, so its forwarded headers can be trusted. They
+      # carry the client address for rate limiting and the protocol that decides
+      # whether cookies are marked Secure.
       TRUST_PROXY: 'true'
+    volumes:
+      - secrets:/run/secrets:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,12 +138,18 @@ services:
     image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
-      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
-      ACME_EMAIL: ${ACME_EMAIL:-}
+      # `:80` answers on any hostname over plain HTTP and requests no
+      # certificate, which is what makes an unconfigured start work anywhere.
+      # Replace with a real hostname for automatic HTTPS.
+      DOMAIN: ${DOMAIN:-:80}
+      # Never empty: Caddy treats an empty value as a syntax error rather than
+      # falling back to a default. Irrelevant unless DOMAIN is a real hostname,
+      # since plain HTTP contacts no certificate authority.
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
     ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
+      - '${HTTP_PORT:-80}:80'
+      - '${HTTPS_PORT:-443}:443'
+      - '${HTTPS_PORT:-443}:443/udp'
     volumes:
       # Certificates must outlive the container or every restart re-issues them.
       - caddy-data:/data
@@ -98,6 +168,9 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+  # Generated credentials. Include this in backups, or a restored database will
+  # not match a freshly generated password.
+  secrets:
 
 networks:
   # Caddy and the API. Reachable from outside only through Caddy's ports.

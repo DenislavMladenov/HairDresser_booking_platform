@@ -2,11 +2,17 @@
 # built SPA and forwards /api to the API container over the internal network.
 #
 # DOMAIN examples:
+#   :80                  any hostname over plain HTTP, no certificate. The
+#                        default, so an unconfigured stack works on any host.
 #   example.com          automatic HTTPS via Let's Encrypt
-#   http://localhost     plain HTTP, for verifying the stack locally
+#   http://localhost     plain HTTP on localhost only
 
 {
-	email {$ACME_EMAIL}
+	# A placeholder default keeps this directive syntactically valid when no
+	# address is configured, which matters because an unconfigured stack serves
+	# plain HTTP and never contacts a certificate authority at all. Set a real
+	# ACME_EMAIL for a public deployment so the CA can warn about expiry.
+	email {$ACME_EMAIL:admin@example.com}
 	# Uncomment while testing certificate issuance to avoid rate limits:
 	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
