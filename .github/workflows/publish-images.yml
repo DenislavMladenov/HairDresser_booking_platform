@@ -47,13 +47,16 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}
-          # A semver tag produces 1.2.3, 1.2 and latest; anything else produces
-          # the short commit sha, so every image traces back to its source.
+          # A semver tag produces 1.2.3 and 1.2; every run also produces the short
+          # commit sha, so an image can always be traced back to its source.
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+          # latest always follows the newest published build, which is what
+          # compose.yml defaults to when IMAGE_TAG is unset.
+          flavor: |
+            latest=true
 
       - name: Build and push
         uses: docker/build-push-action@v6
