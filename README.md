@@ -265,8 +265,55 @@ To pin an exact build instead of following `latest`, create a `.env` next to
 other value has a working default. Do not copy the development `.env` from this
 repository to a server, since it points at a database on your own machine.
 
-New images are published by pushing a `v*` git tag, which builds them in GitHub
-Actions. To build rather than pull, layer the build overrides:
+### Shipping a change
+
+Committing is not enough to reach a server: the images have to be rebuilt.
+Pushing a version tag does that in GitHub Actions, which needs no token of your
+own.
+
+```bash
+# On a machine with the repository.
+git push
+git tag -a v1.2.1 -m 'What changed'
+git push origin v1.2.1
+```
+
+Wait for the run to go green under the repository's Actions tab, then on the
+server:
+
+```bash
+cd ~/booking
+docker compose pull      # or podman compose pull
+docker compose up -d
+```
+
+Only changed layers download, and only containers whose image changed are
+recreated. New migrations are applied by the API as it starts. Appointments,
+services and the admin account live in volumes and are untouched.
+
+If `compose.yml` itself changed, fetch it again before pulling.
+
+To see what is actually running:
+
+```bash
+docker inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' booking-api-1
+```
+
+### Going back
+
+Every release also carries an immutable tag, so returning to the previous one is
+a matter of pinning it:
+
+```bash
+echo 'IMAGE_TAG=1.2.0' >> .env
+docker compose pull && docker compose up -d
+```
+
+That reverts the code but not the database schema. A migration that has already
+been applied is only undone by restoring a backup, so treat a release containing
+one as the point where a backup matters.
+
+To build on the server instead of pulling, layer the build overrides:
 `docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
 PostgreSQL publishes no ports and sits on a network the public-facing container
