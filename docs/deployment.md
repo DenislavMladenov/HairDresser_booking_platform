@@ -2,16 +2,22 @@
 
 ## The short version
 
-On any host with Docker, in an empty directory:
+On any host with Docker, in a directory containing only `compose.yml`:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
-docker login ghcr.io                 # the images are private
 docker compose up -d
 
 docker compose exec api booking seed
 docker compose exec -e ADMIN_EMAIL='you@example.com' -e ADMIN_PASSWORD='...' \
   api booking bootstrap-admin
+```
+
+The images are public, so no registry login is needed. The repository is private,
+though, so copy `compose.yml` to the host rather than fetching it with `curl`:
+
+```bash
+# From a machine that has the repository.
+scp compose.yml user@server:/tmp/
 ```
 
 That is the whole deployment. The app answers on port 80 at whatever address the
@@ -55,20 +61,27 @@ Full VM setup follows.
 
 ## 1. Create the VM
 
-In Proxmox, a Debian 13 VM with 2 vCPU, 4 GB RAM, 50 GB disk. Give it a static
-address or a DHCP reservation, since the DNS record will point at it.
+In Proxmox, 2 vCPU, 4 GB RAM and 50 GB disk is enough. Debian and the RHEL family
+both work; the only differences are the package manager and the firewall, covered
+below. Give the machine a static address or a DHCP reservation, since either DNS
+or the people using it will point at that address.
 
 Then, on the VM:
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y ca-certificates curl git
+# Debian or Ubuntu
+sudo apt update && sudo apt upgrade -y && sudo apt install -y ca-certificates curl
+
+# Rocky, Alma or RHEL
+sudo dnf -y upgrade && sudo dnf -y install ca-certificates curl
 ```
 
 Enable the QEMU guest agent in the VM options if you want clean Proxmox
 shutdowns and snapshots.
 
 ## 2. Install Docker
+
+On Debian or Ubuntu:
 
 ```bash
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -82,7 +95,41 @@ sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 ```
 
+On Rocky, Alma or RHEL:
+
+```bash
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+If `config-manager --add-repo` is rejected, the host has dnf5 and the form is
+`sudo dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/centos/docker-ce.repo`.
+
 Log out and back in for the group change to apply, then check with `docker info`.
+
+Two things differ on the RHEL family. Ports must be opened in firewalld, which is
+enabled by default:
+
+```bash
+sudo firewall-cmd --permanent --add-port=80/tcp
+# Only if you are using a domain with HTTPS.
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --reload
+```
+
+And SELinux is enforcing, which breaks bind-mounted files unless they are
+relabelled. It is not a problem here: the stack uses only named volumes, so there
+is nothing to relabel.
+
+Check that nothing already holds port 80, since a preinstalled web server is
+common:
+
+```bash
+sudo ss -ltnp | grep :80
+```
 
 ## Local network only, without a domain
 
@@ -121,11 +168,17 @@ and PostgreSQL publishes nothing at all.
 
 ## 4. Configure, only if you need to
 
-The server needs `compose.yml` and nothing else:
+The server needs `compose.yml` and nothing else. The repository is private, so
+copy the file across instead of downloading it:
 
 ```bash
-sudo mkdir -p /opt/booking && cd /opt/booking
-sudo curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
+# On a machine that has the repository.
+scp compose.yml user@server:/tmp/compose.yml
+
+# On the server.
+sudo mkdir -p /opt/booking
+sudo mv /tmp/compose.yml /opt/booking/
+cd /opt/booking
 ```
 
 Add a `.env` beside it only to change a default. The ones that matter:
@@ -156,17 +209,18 @@ password will not open. See
 nothing. Building needs 1 to 2 GB of RAM and is by far the heaviest thing that
 would otherwise happen on the VM.
 
-The images are private, so authenticate first. Use a GitHub personal access
-token with only the `read:packages` scope, not one that can write:
-
 ```bash
-echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u DenislavMladenov --password-stdin
-
 docker compose pull
 docker compose up -d
 docker compose ps
 docker compose logs -f caddy   # watch the certificate being issued
 ```
+
+The images are published as public packages, so pulling needs no credentials.
+That also keeps them outside the storage quota that applies to private packages,
+which a 160 MB image would otherwise exhaust after a few releases. If you make
+them private instead, the server needs `docker login ghcr.io` with a token
+limited to the `read:packages` scope.
 
 The API applies pending migrations on start, so there is no separate migration
 step. Publishing new images and running `docker compose pull && docker compose up -d`

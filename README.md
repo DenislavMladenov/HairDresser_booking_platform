@@ -121,7 +121,6 @@ pnpm test:integration     # 106 integration tests, needs pnpm db:up
 Any host with Docker, in an empty directory holding only `compose.yml`:
 
 ```bash
-docker login ghcr.io          # the images are private
 docker compose up -d
 
 docker compose exec api booking seed

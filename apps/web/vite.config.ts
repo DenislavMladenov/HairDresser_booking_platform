@@ -38,7 +38,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // No source map in the production bundle. It was five times the size of the
+    // code itself and shipped the complete original TypeScript to anyone who
+    // opened devtools, in exchange for debugging that is just as easy from a
+    // local build. Development always has maps regardless of this.
+    sourcemap: false,
   },
   test: {
     environment: 'jsdom',
