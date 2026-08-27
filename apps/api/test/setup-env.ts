@@ -29,6 +29,8 @@ if (!/_test(\?|$)/.test(testDatabaseUrl)) {
 process.env.DATABASE_URL = testDatabaseUrl;
 process.env.NODE_ENV = 'test';
 process.env.ENABLE_SWAGGER = 'false';
+// Pinned so price assertions do not depend on the developer's own .env.
+process.env.CURRENCY = 'EUR';
 process.env.LOG_LEVEL = 'error';
 // Production runs behind Caddy with the same setting. Trusting the forwarded
 // header also lets each test client present its own client IP, so per-IP rate

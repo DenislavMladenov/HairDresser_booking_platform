@@ -26,7 +26,7 @@ export const envSchema = z.object({
   CURRENCY: z
     .string()
     .regex(/^[A-Z]{3}$/, 'must be a 3-letter currency code')
-    .default('BGN'),
+    .default('EUR'),
 
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   SESSION_COOKIE_NAME: z

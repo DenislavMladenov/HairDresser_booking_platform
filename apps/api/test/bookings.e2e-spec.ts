@@ -313,7 +313,7 @@ describe('Bookings', () => {
         customerName: 'Ivan Petrov',
         customerPhone: '0888123456',
         status: BookingStatus.PENDING,
-        service: { name: 'Haircut', durationMinutes: 60, price: '25.00' },
+        service: { name: 'Haircut', durationMinutes: 60, price: '25.00', currency: 'EUR' },
       });
     });
 

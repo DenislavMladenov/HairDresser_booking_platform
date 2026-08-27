@@ -62,7 +62,7 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
 
           <p className="mt-1 text-sm text-slate-500">
             {booking.service.name} · {formatDuration(booking.service.durationMinutes)} ·{' '}
-            {formatMoney(booking.service.price, 'BGN')}
+            {formatMoney(booking.service.price, booking.service.currency)}
             {booking.createdByAdmin ? ' · added manually' : ''}
           </p>
 

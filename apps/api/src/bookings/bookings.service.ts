@@ -4,6 +4,7 @@ import { AvailabilityService } from '../availability/availability.service';
 import { ApiException } from '../common/errors/api-exception';
 import { isOverlapViolation } from '../common/errors/database-errors';
 import { TimeService } from '../common/time/time.service';
+import { AppConfig } from '../config/app-config';
 import type { Prisma } from '../generated/prisma/client';
 import { BookingStatus } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
@@ -30,6 +31,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly time: TimeService,
+    private readonly config: AppConfig,
     private readonly catalog: ServiceCatalogService,
     private readonly availability: AvailabilityService,
   ) {}
@@ -297,6 +299,7 @@ export class BookingsService {
         name: row.service.name,
         durationMinutes: row.service.durationMinutes,
         price: row.service.price.toFixed(2),
+        currency: this.config.currency,
       },
       startTime: row.startTime.toISOString(),
       endTime: row.endTime.toISOString(),

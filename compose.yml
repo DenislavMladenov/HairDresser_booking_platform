@@ -140,7 +140,7 @@ services:
       # the app and the API share one.
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       BUSINESS_TIMEZONE: ${BUSINESS_TIMEZONE:-Europe/Sofia}
-      CURRENCY: ${CURRENCY:-BGN}
+      CURRENCY: ${CURRENCY:-EUR}
       SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-barber_session}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-7}
       ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}

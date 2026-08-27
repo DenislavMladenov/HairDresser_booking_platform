@@ -101,6 +101,7 @@ export interface AdminBooking {
     name: string;
     durationMinutes: number;
     price: DecimalString;
+    currency: string;
   };
   startTime: IsoDateTime;
   endTime: IsoDateTime;
