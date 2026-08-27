@@ -2,9 +2,10 @@
 
 ## The short version
 
-On any host with Docker, in a directory containing only `compose.yml`:
+On any host with Docker:
 
 ```bash
+curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
 docker compose up -d
 
 docker compose exec api booking seed
@@ -12,13 +13,8 @@ docker compose exec -e ADMIN_EMAIL='you@example.com' -e ADMIN_PASSWORD='...' \
   api booking bootstrap-admin
 ```
 
-The images are public, so no registry login is needed. The repository is private,
-though, so copy `compose.yml` to the host rather than fetching it with `curl`:
-
-```bash
-# From a machine that has the repository.
-scp compose.yml user@server:/tmp/
-```
+No registry login and no repository checkout: the images are public and
+`compose.yml` is the only file the host needs.
 
 That is the whole deployment. The app answers on port 80 at whatever address the
 host has, whether that is `localhost`, `192.168.1.50` or a hostname. There is no
@@ -168,18 +164,15 @@ and PostgreSQL publishes nothing at all.
 
 ## 4. Configure, only if you need to
 
-The server needs `compose.yml` and nothing else. The repository is private, so
-copy the file across instead of downloading it:
+The server needs `compose.yml` and nothing else:
 
 ```bash
-# On a machine that has the repository.
-scp compose.yml user@server:/tmp/compose.yml
-
-# On the server.
-sudo mkdir -p /opt/booking
-sudo mv /tmp/compose.yml /opt/booking/
-cd /opt/booking
+sudo mkdir -p /opt/booking && cd /opt/booking
+sudo curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
 ```
+
+Swap `main` for a tag such as `v1.1.1` to fetch the file exactly as it was for
+that release, which matters if a future version changes the stack's shape.
 
 Add a `.env` beside it only to change a default. The ones that matter:
 

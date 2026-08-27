@@ -118,9 +118,10 @@ pnpm test:integration     # 106 integration tests, needs pnpm db:up
 
 ## Deploying
 
-Any host with Docker, in an empty directory holding only `compose.yml`:
+Any host with Docker, in an empty directory:
 
 ```bash
+curl -fsSLO https://raw.githubusercontent.com/DenislavMladenov/HairDresser_booking_platform/main/compose.yml
 docker compose up -d
 
 docker compose exec api booking seed
