@@ -107,7 +107,11 @@ services:
       POSTGRES_HOST: postgres
       DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
       SESSION_SECRET_FILE: /run/secrets/session_secret
-      DATABASE_URL: ${DATABASE_URL:-}
+      # Deliberately not DATABASE_URL: in a checkout that variable points at the
+      # development database on the host, which this container cannot reach, and
+      # Compose would pick it up from .env automatically. Set this only to use a
+      # database outside the stack.
+      DATABASE_URL: ${EXTERNAL_DATABASE_URL:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
       # Only for a client served from some other origin; normally empty, because
       # the app and the API share one.
