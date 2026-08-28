@@ -76,6 +76,38 @@ export function addDays(isoDate: string, days: number, timezone = BUSINESS_TIMEZ
   return DateTime.fromISO(isoDate, { zone: timezone }).plus({ days }).toISODate() ?? isoDate;
 }
 
+/** "August 2026" */
+export function formatMonthYear(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
+  return DateTime.fromISO(isoDate, { zone: timezone }).toFormat('LLLL yyyy');
+}
+
+export function startOfMonth(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
+  return DateTime.fromISO(isoDate, { zone: timezone }).startOf('month').toISODate() ?? isoDate;
+}
+
+/** Always lands on the 1st, so paging months never drifts onto a short month. */
+export function addMonths(isoDate: string, months: number, timezone = BUSINESS_TIMEZONE): string {
+  return (
+    DateTime.fromISO(isoDate, { zone: timezone }).plus({ months }).startOf('month').toISODate() ??
+    isoDate
+  );
+}
+
+export function daysInMonth(isoDate: string, timezone = BUSINESS_TIMEZONE): number {
+  return DateTime.fromISO(isoDate, { zone: timezone }).daysInMonth ?? 30;
+}
+
+/** Monday-first weekday index: 0 for Monday through 6 for Sunday. */
+export function mondayIndex(isoDate: string, timezone = BUSINESS_TIMEZONE): number {
+  return DateTime.fromISO(isoDate, { zone: timezone }).weekday - 1;
+}
+
+export function daysBetween(startIso: string, endIso: string, timezone = BUSINESS_TIMEZONE): number {
+  const start = DateTime.fromISO(startIso, { zone: timezone });
+  const end = DateTime.fromISO(endIso, { zone: timezone });
+  return Math.round(end.diff(start, 'days').days);
+}
+
 export function isPast(isoDateTime: string): boolean {
   return DateTime.fromISO(isoDateTime) < DateTime.now();
 }
