@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { BookingConfirmation, PublicService } from '@booking/shared';
-import { Link } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { QueryState } from '../../components/ui/QueryState';
 import { useServices } from '../../hooks/use-booking-data';
@@ -50,9 +49,6 @@ export function BookingPage() {
             <h1 className="text-xl font-semibold">Barber Shop</h1>
             <p className="text-brand-100 text-sm">Book your appointment online</p>
           </div>
-          <Link to="/admin/login" className="text-brand-100 text-sm hover:text-white">
-            Staff
-          </Link>
         </div>
       </header>
 
