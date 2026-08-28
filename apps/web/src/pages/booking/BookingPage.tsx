@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { BookingConfirmation, PublicService } from '@booking/shared';
 import { Alert } from '../../components/ui/Alert';
 import { QueryState } from '../../components/ui/QueryState';
+import { LanguageToggle } from '../../i18n/LanguageToggle';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useServices } from '../../hooks/use-booking-data';
 import { todayIsoDate } from '../../lib/format';
 import { DateStep } from './DateStep';
@@ -17,6 +19,7 @@ import { TimeStep } from './TimeStep';
  * server decides what is bookable at every stage.
  */
 export function BookingPage() {
+  const { t } = useTranslation();
   const servicesQuery = useServices();
 
   const [service, setService] = useState<PublicService | null>(null);
@@ -46,9 +49,10 @@ export function BookingPage() {
       <header className="bg-brand-900 text-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-5">
           <div>
-            <h1 className="text-xl font-semibold">Barber Shop</h1>
-            <p className="text-brand-100 text-sm">Book your appointment online</p>
+            <h1 className="text-xl font-semibold">{t.booking.header.title}</h1>
+            <p className="text-brand-100 text-sm">{t.booking.header.subtitle}</p>
           </div>
+          <LanguageToggle />
         </div>
       </header>
 
@@ -63,7 +67,7 @@ export function BookingPage() {
               isLoading={servicesQuery.isPending}
               error={servicesQuery.error}
               isEmpty={servicesQuery.data?.length === 0}
-              emptyMessage="No services are available for booking right now."
+              emptyMessage={t.booking.services.empty}
             >
               <div className="mt-6 space-y-6">
                 <ServiceStep
@@ -113,9 +117,7 @@ export function BookingPage() {
       </main>
 
       <footer className="mx-auto max-w-3xl px-4 py-8">
-        <Alert tone="info">
-          Your details are used only to manage your appointment and are visible only to the barber.
-        </Alert>
+        <Alert tone="info">{t.booking.footer.privacyNotice}</Alert>
       </footer>
     </div>
   );

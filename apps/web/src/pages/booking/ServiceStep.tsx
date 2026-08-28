@@ -1,5 +1,6 @@
 import type { PublicService } from '@booking/shared';
 import { Card, CardHeader } from '../../components/ui/Card';
+import { useTranslation } from '../../i18n/language-context-core';
 import { formatDuration, formatMoney } from '../../lib/format';
 
 interface ServiceStepProps {
@@ -9,9 +10,11 @@ interface ServiceStepProps {
 }
 
 export function ServiceStep({ services, selected, onSelect }: ServiceStepProps) {
+  const { t } = useTranslation();
+
   return (
     <Card>
-      <CardHeader title="Choose a service" />
+      <CardHeader title={t.booking.services.title} />
 
       <div className="grid gap-3 sm:grid-cols-2">
         {services.map((service) => {

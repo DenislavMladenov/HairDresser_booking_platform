@@ -6,6 +6,8 @@ import { Card, CardHeader } from '../../components/ui/Card';
 import { Field, TextArea, TextInput } from '../../components/ui/Field';
 import { Modal } from '../../components/ui/Modal';
 import { QueryState } from '../../components/ui/QueryState';
+import { useApiErrorMessage } from '../../i18n/api-errors';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useAdminServices, useServiceMutations } from '../../hooks/use-admin';
 import { ApiError } from '../../lib/api-client';
 import { formatDuration, formatMoney } from '../../lib/format';
@@ -27,6 +29,7 @@ const EMPTY_FORM: ServiceFormState = {
 };
 
 export function ServicesPage() {
+  const { t } = useTranslation();
   const services = useAdminServices();
   const mutations = useServiceMutations();
 
@@ -37,16 +40,16 @@ export function ServicesPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          title="Services"
-          description="Disabling a service hides it from customers but keeps existing appointments"
-          action={<Button onClick={() => setCreating(true)}>Add service</Button>}
+          title={t.admin.services.title}
+          description={t.admin.services.description}
+          action={<Button onClick={() => setCreating(true)}>{t.admin.services.addService}</Button>}
         />
 
         <QueryState
           isLoading={services.isPending}
           error={services.error}
           isEmpty={services.data?.length === 0}
-          emptyMessage="No services yet. Add the first one."
+          emptyMessage={t.admin.services.empty}
         >
           <ul className="divide-y divide-slate-100">
             {(services.data ?? []).map((service) => (
@@ -56,7 +59,7 @@ export function ServicesPage() {
                     {service.name}
                     {!service.active ? (
                       <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">
-                        disabled
+                        {t.admin.services.disabledBadge}
                       </span>
                     ) : null}
                   </p>
@@ -71,7 +74,7 @@ export function ServicesPage() {
 
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setEditing(service)}>
-                    Edit
+                    {t.admin.services.edit}
                   </Button>
                   <Button
                     variant={service.active ? 'ghost' : 'primary'}
@@ -84,7 +87,7 @@ export function ServicesPage() {
                       })
                     }
                   >
-                    {service.active ? 'Disable' : 'Enable'}
+                    {service.active ? t.admin.services.disable : t.admin.services.enable}
                   </Button>
                 </div>
               </li>
@@ -95,7 +98,7 @@ export function ServicesPage() {
 
       {creating ? (
         <ServiceForm
-          title="Add service"
+          title={t.admin.services.addTitle}
           initial={EMPTY_FORM}
           isSaving={mutations.create.isPending}
           error={mutations.create.error}
@@ -117,7 +120,7 @@ export function ServicesPage() {
 
       {editing ? (
         <ServiceForm
-          title={`Edit ${editing.name}`}
+          title={t.admin.services.editTitle(editing.name)}
           initial={{
             name: editing.name,
             description: editing.description ?? '',
@@ -159,6 +162,8 @@ interface ServiceFormProps {
 }
 
 function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: ServiceFormProps) {
+  const { t } = useTranslation();
+  const errorMessage = useApiErrorMessage(error);
   const [values, setValues] = useState(initial);
 
   function update<K extends keyof ServiceFormState>(key: K, value: string): void {
@@ -176,16 +181,16 @@ function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: Ser
         <div className="mb-4">
           <Alert
             tone="error"
-            title="Could not save"
+            title={t.admin.services.couldNotSave}
             details={error instanceof ApiError ? error.details : undefined}
           >
-            {error instanceof ApiError ? error.message : 'Please try again.'}
+            {errorMessage}
           </Alert>
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Name" htmlFor="service-name" required>
+        <Field label={t.admin.services.nameLabel} htmlFor="service-name" required>
           <TextInput
             id="service-name"
             required
@@ -196,7 +201,7 @@ function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: Ser
           />
         </Field>
 
-        <Field label="Description" htmlFor="service-description">
+        <Field label={t.admin.services.descriptionLabel} htmlFor="service-description">
           <TextArea
             id="service-description"
             rows={2}
@@ -208,10 +213,10 @@ function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: Ser
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="Duration in minutes"
+            label={t.admin.services.durationLabel}
             htmlFor="service-duration"
             required
-            hint="Between 5 and 480."
+            hint={t.admin.services.durationHint}
           >
             <TextInput
               id="service-duration"
@@ -225,7 +230,12 @@ function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: Ser
             />
           </Field>
 
-          <Field label="Price" htmlFor="service-price" required hint="For example 25.00">
+          <Field
+            label={t.admin.services.priceLabel}
+            htmlFor="service-price"
+            required
+            hint={t.admin.services.priceHint}
+          >
             <TextInput
               id="service-price"
               required
@@ -237,7 +247,11 @@ function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: Ser
           </Field>
         </div>
 
-        <Field label="Sort order" htmlFor="service-order" hint="Lower numbers are listed first.">
+        <Field
+          label={t.admin.services.sortOrderLabel}
+          htmlFor="service-order"
+          hint={t.admin.services.sortOrderHint}
+        >
           <TextInput
             id="service-order"
             type="number"
@@ -250,10 +264,10 @@ function ServiceForm({ title, initial, isSaving, error, onClose, onSubmit }: Ser
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t.admin.services.cancel}
           </Button>
           <Button type="submit" loading={isSaving}>
-            Save
+            {t.admin.services.save}
           </Button>
         </div>
       </form>

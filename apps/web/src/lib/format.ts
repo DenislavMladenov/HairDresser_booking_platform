@@ -7,6 +7,22 @@ import { DateTime } from 'luxon';
  */
 export const BUSINESS_TIMEZONE = 'Europe/Sofia';
 
+/**
+ * Module-level rather than a parameter on every function below, because these
+ * helpers are called from roughly twenty places and the active language rarely
+ * changes more than once per session. `LanguageProvider` calls this whenever the
+ * user toggles the language.
+ */
+let activeLocale: 'bg' | 'en' = 'bg';
+
+export function setActiveLocale(locale: 'bg' | 'en'): void {
+  activeLocale = locale;
+}
+
+function luxonLocale(): string {
+  return activeLocale === 'bg' ? 'bg' : 'en-GB';
+}
+
 export function formatMoney(amount: string, currency: string): string {
   const value = Number(amount);
 
@@ -29,22 +45,25 @@ export function formatTimeRange(
   return `${formatTime(startIso, timezone)} - ${formatTime(endIso, timezone)}`;
 }
 
-/** "Tuesday, 1 September" */
+/** "Tuesday, 1 September" (or its Bulgarian equivalent) */
 export function formatDateLong(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
-  return DateTime.fromISO(isoDate, { zone: timezone }).toFormat('cccc, d LLLL');
+  return DateTime.fromISO(isoDate, { zone: timezone }).setLocale(luxonLocale()).toFormat('cccc, d LLLL');
 }
 
-/** "Tue 1 Sep" */
+/** "Tue 1 Sep" (or its Bulgarian equivalent) */
 export function formatDateShort(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
-  return DateTime.fromISO(isoDate, { zone: timezone }).toFormat('ccc d LLL');
+  return DateTime.fromISO(isoDate, { zone: timezone }).setLocale(luxonLocale()).toFormat('ccc d LLL');
 }
 
 export function formatDateTimeLong(isoDateTime: string, timezone = BUSINESS_TIMEZONE): string {
-  return DateTime.fromISO(isoDateTime).setZone(timezone).toFormat('cccc, d LLLL, HH:mm');
+  return DateTime.fromISO(isoDateTime)
+    .setZone(timezone)
+    .setLocale(luxonLocale())
+    .toFormat('cccc, d LLLL, HH:mm');
 }
 
 export function formatWeekdayName(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
-  return DateTime.fromISO(isoDate, { zone: timezone }).toFormat('ccc');
+  return DateTime.fromISO(isoDate, { zone: timezone }).setLocale(luxonLocale()).toFormat('ccc');
 }
 
 export function formatDayOfMonth(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
@@ -52,14 +71,16 @@ export function formatDayOfMonth(isoDate: string, timezone = BUSINESS_TIMEZONE):
 }
 
 export function formatDuration(minutes: number): string {
+  const [minuteUnit, hourUnit] = activeLocale === 'bg' ? ['мин', 'ч'] : ['min', 'h'];
+
   if (minutes < 60) {
-    return `${minutes} min`;
+    return `${minutes} ${minuteUnit}`;
   }
 
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
 
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+  return rest === 0 ? `${hours} ${hourUnit}` : `${hours} ${hourUnit} ${rest} ${minuteUnit}`;
 }
 
 /** Minute offset from local midnight rendered as HH:mm, for working hours. */
@@ -76,9 +97,9 @@ export function addDays(isoDate: string, days: number, timezone = BUSINESS_TIMEZ
   return DateTime.fromISO(isoDate, { zone: timezone }).plus({ days }).toISODate() ?? isoDate;
 }
 
-/** "August 2026" */
+/** "August 2026" (or its Bulgarian equivalent) */
 export function formatMonthYear(isoDate: string, timezone = BUSINESS_TIMEZONE): string {
-  return DateTime.fromISO(isoDate, { zone: timezone }).toFormat('LLLL yyyy');
+  return DateTime.fromISO(isoDate, { zone: timezone }).setLocale(luxonLocale()).toFormat('LLLL yyyy');
 }
 
 export function startOfMonth(isoDate: string, timezone = BUSINESS_TIMEZONE): string {

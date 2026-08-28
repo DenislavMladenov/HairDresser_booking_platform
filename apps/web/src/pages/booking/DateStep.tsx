@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { QueryState } from '../../components/ui/QueryState';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useAvailabilityCalendar } from '../../hooks/use-booking-data';
 import {
   addDays,
@@ -14,8 +15,6 @@ import {
   mondayIndex,
   startOfMonth,
 } from '../../lib/format';
-
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 interface DateStepProps {
   serviceId: string;
@@ -31,6 +30,7 @@ interface DateStepProps {
  * dead end. Only the visible month is fetched, one request at a time.
  */
 export function DateStep({ serviceId, from, selected, onSelect }: DateStepProps) {
+  const { t } = useTranslation();
   const earliestMonth = startOfMonth(from);
   const [monthStart, setMonthStart] = useState(earliestMonth);
 
@@ -53,7 +53,7 @@ export function DateStep({ serviceId, from, selected, onSelect }: DateStepProps)
   return (
     <Card>
       <CardHeader
-        title="Choose a day"
+        title={t.booking.date.title}
         description={formatMonthYear(monthStart)}
         action={
           <div className="flex gap-2">
@@ -62,9 +62,9 @@ export function DateStep({ serviceId, from, selected, onSelect }: DateStepProps)
               size="sm"
               disabled={isEarliestMonth}
               onClick={() => setMonthStart(addMonths(monthStart, -1))}
-              aria-label="Previous month"
+              aria-label={t.booking.date.previousAria}
             >
-              Previous
+              {t.booking.date.previous}
             </Button>
             <Button
               variant="secondary"
@@ -72,15 +72,15 @@ export function DateStep({ serviceId, from, selected, onSelect }: DateStepProps)
               disabled={isEarliestMonth}
               onClick={() => setMonthStart(earliestMonth)}
             >
-              This month
+              {t.booking.date.thisMonth}
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setMonthStart(addMonths(monthStart, 1))}
-              aria-label="Next month"
+              aria-label={t.booking.date.nextAria}
             >
-              Next
+              {t.booking.date.next}
             </Button>
           </div>
         }
@@ -88,7 +88,7 @@ export function DateStep({ serviceId, from, selected, onSelect }: DateStepProps)
 
       <QueryState isLoading={calendar.isPending} error={calendar.error}>
         <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400 sm:gap-2 sm:text-xs">
-          {WEEKDAY_LABELS.map((label) => (
+          {t.common.weekdaysShort.map((label) => (
             <span key={label} className="py-1">
               {label}
             </span>
@@ -131,9 +131,7 @@ export function DateStep({ serviceId, from, selected, onSelect }: DateStepProps)
         </div>
 
         {!hasAnyFreeDay ? (
-          <p className="mt-4 text-sm text-slate-500">
-            No free days this month. Try the next one.
-          </p>
+          <p className="mt-4 text-sm text-slate-500">{t.booking.date.noFreeDays}</p>
         ) : null}
       </QueryState>
     </Card>

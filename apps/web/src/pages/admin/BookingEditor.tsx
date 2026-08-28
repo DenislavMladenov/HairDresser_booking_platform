@@ -4,6 +4,8 @@ import { DateTime } from 'luxon';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { Field, TextArea, TextInput } from '../../components/ui/Field';
+import { useApiErrorMessage } from '../../i18n/api-errors';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useAdminServices, type BookingActions } from '../../hooks/use-admin';
 import { ApiError } from '../../lib/api-client';
 import { BUSINESS_TIMEZONE } from '../../lib/format';
@@ -23,6 +25,7 @@ function toLocalParts(isoDateTime: string): { date: string; time: string } {
 }
 
 export function BookingEditor({ booking, actions, onClose }: BookingEditorProps) {
+  const { t } = useTranslation();
   const services = useAdminServices();
   const initial = toLocalParts(booking.startTime);
 
@@ -60,24 +63,25 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
   }
 
   const failure = actions.update.error;
+  const failureMessage = useApiErrorMessage(failure);
 
   return (
-    <Modal title="Edit appointment" onClose={onClose}>
+    <Modal title={t.admin.bookingEditor.title} onClose={onClose}>
       {failure ? (
         <div className="mb-4">
           <Alert
             tone="error"
-            title="Could not save"
+            title={t.admin.bookingEditor.couldNotSave}
             details={failure instanceof ApiError ? failure.details : undefined}
           >
-            {failure instanceof ApiError ? failure.message : 'Please try again.'}
+            {failureMessage}
           </Alert>
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Date" htmlFor="edit-date" required>
+          <Field label={t.admin.bookingEditor.dateLabel} htmlFor="edit-date" required>
             <TextInput
               id="edit-date"
               type="date"
@@ -87,7 +91,7 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
             />
           </Field>
 
-          <Field label="Time" htmlFor="edit-time" required>
+          <Field label={t.admin.bookingEditor.timeLabel} htmlFor="edit-time" required>
             <TextInput
               id="edit-time"
               type="time"
@@ -99,9 +103,9 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
         </div>
 
         <Field
-          label="Service"
+          label={t.admin.bookingEditor.serviceLabel}
           htmlFor="edit-service"
-          hint="Changing the service recalculates the end time."
+          hint={t.admin.bookingEditor.serviceHint}
         >
           <Select
             id="edit-service"
@@ -116,7 +120,7 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
           </Select>
         </Field>
 
-        <Field label="Customer name" htmlFor="edit-name" required>
+        <Field label={t.admin.bookingEditor.nameLabel} htmlFor="edit-name" required>
           <TextInput
             id="edit-name"
             required
@@ -126,7 +130,7 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
           />
         </Field>
 
-        <Field label="Phone" htmlFor="edit-phone" required>
+        <Field label={t.admin.bookingEditor.phoneLabel} htmlFor="edit-phone" required>
           <TextInput
             id="edit-phone"
             type="tel"
@@ -137,7 +141,11 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
           />
         </Field>
 
-        <Field label="Notes" htmlFor="edit-notes" hint="Only you can see these.">
+        <Field
+          label={t.admin.bookingEditor.notesLabel}
+          htmlFor="edit-notes"
+          hint={t.admin.bookingEditor.notesHint}
+        >
           <TextArea
             id="edit-notes"
             rows={3}
@@ -149,10 +157,10 @@ export function BookingEditor({ booking, actions, onClose }: BookingEditorProps)
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t.admin.bookingEditor.cancel}
           </Button>
           <Button type="submit" loading={actions.update.isPending}>
-            Save changes
+            {t.admin.bookingEditor.save}
           </Button>
         </div>
       </form>

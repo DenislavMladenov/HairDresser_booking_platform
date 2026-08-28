@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { useTranslation } from '../../i18n/language-context-core';
 
 interface ModalProps {
   title: string;
@@ -7,6 +8,7 @@ interface ModalProps {
 }
 
 export function Modal({ title, onClose, children }: ModalProps) {
+  const { t } = useTranslation();
   // Escape closes the dialog, which is what people expect and what keyboard
   // users rely on.
   useEffect(() => {
@@ -33,7 +35,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.shared.modal.close}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           >
             ✕

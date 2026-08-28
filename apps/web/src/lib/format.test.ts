@@ -1,18 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   addDays,
   formatDateLong,
   formatDuration,
   formatMinuteOfDay,
   formatMoney,
+  formatMonthYear,
   formatTime,
   formatTimeRange,
+  setActiveLocale,
 } from './format';
 
 /**
  * These helpers decide what the customer reads. The timezone cases matter most:
  * an instant must always render in the shop's timezone, never the visitor's.
+ * Locale is reset after every test so one test's language choice never leaks
+ * into the next.
  */
+afterEach(() => {
+  setActiveLocale('bg');
+});
+
 describe('formatMoney', () => {
   it('shows two decimal places with the currency', () => {
     expect(formatMoney('25', 'BGN')).toBe('25.00 BGN');
@@ -47,21 +55,48 @@ describe('formatTimeRange', () => {
 });
 
 describe('formatDateLong', () => {
-  it('names the weekday and month', () => {
+  it('names the weekday and month in Bulgarian by default', () => {
+    setActiveLocale('bg');
+    expect(formatDateLong('2026-09-01')).toBe('вторник, 1 септември');
+  });
+
+  it('names the weekday and month in English when switched', () => {
+    setActiveLocale('en');
     expect(formatDateLong('2026-09-01')).toBe('Tuesday, 1 September');
+  });
+});
+
+describe('formatMonthYear', () => {
+  it('names the month and year in Bulgarian by default', () => {
+    setActiveLocale('bg');
+    expect(formatMonthYear('2026-08-01')).toBe('август 2026');
+  });
+
+  it('names the month and year in English when switched', () => {
+    setActiveLocale('en');
+    expect(formatMonthYear('2026-08-01')).toBe('August 2026');
   });
 });
 
 describe('formatDuration', () => {
   it('uses minutes below an hour', () => {
+    setActiveLocale('en');
     expect(formatDuration(20)).toBe('20 min');
     expect(formatDuration(45)).toBe('45 min');
   });
 
   it('uses hours at and above an hour', () => {
+    setActiveLocale('en');
     expect(formatDuration(60)).toBe('1 h');
     expect(formatDuration(90)).toBe('1 h 30 min');
     expect(formatDuration(120)).toBe('2 h');
+  });
+
+  it('switches to Bulgarian units when the locale is Bulgarian', () => {
+    setActiveLocale('bg');
+    expect(formatDuration(20)).toBe('20 мин');
+    expect(formatDuration(90)).toBe('1 ч 30 мин');
+    expect(formatDuration(120)).toBe('2 ч');
   });
 });
 

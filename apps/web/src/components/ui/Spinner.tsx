@@ -1,3 +1,5 @@
+import { useTranslation } from '../../i18n/language-context-core';
+
 const SIZES = {
   sm: 'h-4 w-4 border-2',
   md: 'h-6 w-6 border-2',
@@ -10,12 +12,14 @@ interface SpinnerProps {
 }
 
 export function Spinner({ size = 'md', label }: SpinnerProps) {
+  const { t } = useTranslation();
+
   return (
     <span className="inline-flex items-center gap-2">
       <span
         className={`animate-spin rounded-full border-current border-t-transparent ${SIZES[size]}`}
         role="status"
-        aria-label={label ?? 'Loading'}
+        aria-label={label ?? t.shared.spinner.loading}
       />
       {label ? <span className="text-sm text-slate-600">{label}</span> : null}
     </span>

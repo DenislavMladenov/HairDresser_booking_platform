@@ -4,9 +4,12 @@ import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { Field, TextInput } from '../../components/ui/Field';
+import { useApiErrorMessage } from '../../i18n/api-errors';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useCreateBooking } from '../../hooks/use-booking-data';
 import { ApiError } from '../../lib/api-client';
 import { formatDateLong, formatDuration, formatMoney } from '../../lib/format';
+import type { Translations } from '../../i18n/types';
 
 interface DetailsStepProps {
   service: PublicService;
@@ -27,25 +30,31 @@ interface FieldErrors {
  * Local checks here exist only to save a round trip; the server validates
  * everything again and its answer is what counts.
  */
-function validate(name: string, phone: string, email: string): FieldErrors {
+function validate(
+  name: string,
+  phone: string,
+  email: string,
+  t: Translations['booking']['details'],
+): FieldErrors {
   const errors: FieldErrors = {};
 
   if (name.trim().length < 2) {
-    errors.customerName = 'Please enter your name.';
+    errors.customerName = t.nameError;
   }
 
   if ((phone.match(/\d/g) ?? []).length < 6) {
-    errors.customerPhone = 'Please enter a phone number we can reach you on.';
+    errors.customerPhone = t.phoneError;
   }
 
   if (email.trim().length > 0 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
-    errors.customerEmail = 'Please enter a valid email address, or leave it empty.';
+    errors.customerEmail = t.emailError;
   }
 
   return errors;
 }
 
 export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: DetailsStepProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -53,11 +62,12 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
 
   const createBooking = useCreateBooking();
   const failure = createBooking.error;
+  const failureMessage = useApiErrorMessage(failure);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
 
-    const found = validate(name, phone, email);
+    const found = validate(name, phone, email, t.booking.details);
     setErrors(found);
 
     if (Object.keys(found).length > 0) {
@@ -80,25 +90,25 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
 
   return (
     <Card>
-      <CardHeader title="Your details" />
+      <CardHeader title={t.booking.details.title} />
 
       <dl className="mb-5 rounded-lg bg-slate-50 p-4 text-sm">
         <div className="flex justify-between gap-4">
-          <dt className="text-slate-600">Service</dt>
+          <dt className="text-slate-600">{t.booking.details.summaryService}</dt>
           <dd className="font-medium text-slate-900">{service.name}</dd>
         </div>
         <div className="mt-1.5 flex justify-between gap-4">
-          <dt className="text-slate-600">When</dt>
+          <dt className="text-slate-600">{t.booking.details.summaryWhen}</dt>
           <dd className="font-medium text-slate-900">
-            {formatDateLong(date)} at {slot.label}
+            {formatDateLong(date)} {t.booking.details.at} {slot.label}
           </dd>
         </div>
         <div className="mt-1.5 flex justify-between gap-4">
-          <dt className="text-slate-600">Duration</dt>
+          <dt className="text-slate-600">{t.booking.details.summaryDuration}</dt>
           <dd className="font-medium text-slate-900">{formatDuration(service.durationMinutes)}</dd>
         </div>
         <div className="mt-1.5 flex justify-between gap-4">
-          <dt className="text-slate-600">Price</dt>
+          <dt className="text-slate-600">{t.booking.details.summaryPrice}</dt>
           <dd className="font-medium text-slate-900">
             {formatMoney(service.price, service.currency)}
           </dd>
@@ -107,14 +117,14 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
 
       {slotWasTaken ? (
         <div className="mb-4">
-          <Alert tone="warning" title="That time is no longer free">
-            {failure.message}
+          <Alert tone="warning" title={t.booking.details.slotGoneTitle}>
+            {failureMessage}
             <button
               type="button"
               onClick={onSlotLost}
               className="text-brand-700 mt-2 block text-sm font-medium underline"
             >
-              Pick another time
+              {t.booking.details.pickAnotherTime}
             </button>
           </Alert>
         </div>
@@ -122,16 +132,21 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
         <div className="mb-4">
           <Alert
             tone="error"
-            title="Booking failed"
+            title={t.booking.details.bookingFailedTitle}
             details={failure instanceof ApiError ? failure.details : undefined}
           >
-            {failure instanceof ApiError ? failure.message : 'Please try again.'}
+            {failureMessage}
           </Alert>
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <Field label="Your name" htmlFor="customerName" required error={errors.customerName}>
+        <Field
+          label={t.booking.details.nameLabel}
+          htmlFor="customerName"
+          required
+          error={errors.customerName}
+        >
           <TextInput
             id="customerName"
             name="name"
@@ -143,10 +158,10 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
         </Field>
 
         <Field
-          label="Phone number"
+          label={t.booking.details.phoneLabel}
           htmlFor="customerPhone"
           required
-          hint="So the barber can reach you if something changes."
+          hint={t.booking.details.phoneHint}
           error={errors.customerPhone}
         >
           <TextInput
@@ -160,7 +175,12 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
           />
         </Field>
 
-        <Field label="Email" htmlFor="customerEmail" hint="Optional." error={errors.customerEmail}>
+        <Field
+          label={t.booking.details.emailLabel}
+          htmlFor="customerEmail"
+          hint={t.booking.details.emailHint}
+          error={errors.customerEmail}
+        >
           <TextInput
             id="customerEmail"
             name="email"
@@ -173,7 +193,7 @@ export function DetailsStep({ service, date, slot, onBooked, onSlotLost }: Detai
         </Field>
 
         <Button type="submit" size="lg" fullWidth loading={createBooking.isPending}>
-          Confirm booking
+          {t.booking.details.submit}
         </Button>
       </form>
     </Card>

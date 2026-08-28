@@ -1,17 +1,9 @@
 import type { BookingStatus } from '@booking/shared';
 
 /**
- * Presentation for booking statuses. Kept out of the component file so that
- * editing a label does not force a full reload during development.
+ * Presentation for booking statuses. The labels themselves live in the
+ * translation dictionaries (`t.status`), since they are user-facing text.
  */
-export const STATUS_LABELS: Record<BookingStatus, string> = {
-  PENDING: 'Pending',
-  CONFIRMED: 'Confirmed',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-  NO_SHOW: 'No show',
-};
-
 export const STATUS_STYLES: Record<BookingStatus, string> = {
   PENDING: 'bg-amber-100 text-amber-800',
   CONFIRMED: 'bg-brand-100 text-brand-900',
@@ -19,7 +11,3 @@ export const STATUS_STYLES: Record<BookingStatus, string> = {
   CANCELLED: 'bg-slate-200 text-slate-700',
   NO_SHOW: 'bg-red-100 text-red-800',
 };
-
-export function statusLabel(status: BookingStatus): string {
-  return STATUS_LABELS[status];
-}

@@ -13,6 +13,7 @@ import { TodayPage } from './pages/admin/TodayPage';
 import { WorkingHoursPage } from './pages/admin/WorkingHoursPage';
 import { BookingPage } from './pages/booking/BookingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { createQueryClient } from './lib/query-client';
 
 export function App() {
@@ -21,32 +22,34 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<BookingPage />} />
-          <Route path="/admin/login" element={<LoginPage />} />
+      <LanguageProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<BookingPage />} />
+            <Route path="/admin/login" element={<LoginPage />} />
 
-          <Route
-            path="/admin"
-            element={
-              <RequireSession>
-                <AdminLayout />
-              </RequireSession>
-            }
-          >
-            <Route index element={<Navigate to="/admin/today" replace />} />
-            <Route path="today" element={<TodayPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="appointments" element={<AppointmentsPage />} />
-            <Route path="services" element={<ServicesPage />} />
-            <Route path="working-hours" element={<WorkingHoursPage />} />
-            <Route path="blocked-times" element={<BlockedTimesPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
+            <Route
+              path="/admin"
+              element={
+                <RequireSession>
+                  <AdminLayout />
+                </RequireSession>
+              }
+            >
+              <Route index element={<Navigate to="/admin/today" replace />} />
+              <Route path="today" element={<TodayPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
+              <Route path="services" element={<ServicesPage />} />
+              <Route path="working-hours" element={<WorkingHoursPage />} />
+              <Route path="blocked-times" element={<BlockedTimesPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
 
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

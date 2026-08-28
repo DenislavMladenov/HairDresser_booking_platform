@@ -4,6 +4,7 @@ import { BookingCard } from '../../components/admin/BookingCard';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { QueryState } from '../../components/ui/QueryState';
+import { useTranslation } from '../../i18n/language-context-core';
 import { sortByStart, useAdminBookings, useBookingActions } from '../../hooks/use-admin';
 import {
   addDays,
@@ -22,6 +23,7 @@ function startOfWeek(isoDate: string): string {
 }
 
 export function CalendarPage() {
+  const { t } = useTranslation();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayIsoDate()));
   const [selectedDate, setSelectedDate] = useState(todayIsoDate());
   const [editing, setEditing] = useState<AdminBooking | null>(null);
@@ -49,8 +51,8 @@ export function CalendarPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          title="Calendar"
-          description="Pick a day to see its appointments"
+          title={t.admin.calendar.title}
+          description={t.admin.calendar.description}
           action={
             <div className="flex gap-2">
               <Button
@@ -58,21 +60,21 @@ export function CalendarPage() {
                 size="sm"
                 onClick={() => setWeekStart(addDays(weekStart, -7))}
               >
-                Previous
+                {t.admin.calendar.previous}
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setWeekStart(startOfWeek(todayIsoDate()))}
               >
-                This week
+                {t.admin.calendar.thisWeek}
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setWeekStart(addDays(weekStart, 7))}
               >
-                Next
+                {t.admin.calendar.next}
               </Button>
             </div>
           }
@@ -101,10 +103,10 @@ export function CalendarPage() {
                   <span
                     className={`block text-[11px] ${isSelected ? 'text-brand-100' : 'text-slate-500'}`}
                   >
-                    {count === 0 ? '-' : `${count} appt`}
+                    {count === 0 ? t.admin.calendar.noAppt : t.admin.calendar.apptCount(count)}
                   </span>
                   {isToday(date) ? (
-                    <span className="block text-[10px] font-medium">today</span>
+                    <span className="block text-[10px] font-medium">{t.admin.calendar.today}</span>
                   ) : null}
                 </button>
               );
@@ -120,7 +122,7 @@ export function CalendarPage() {
           isLoading={week.isPending}
           error={week.error}
           isEmpty={selectedItems.length === 0}
-          emptyMessage="Nothing booked on this day."
+          emptyMessage={t.admin.calendar.empty}
         >
           <ul className="space-y-3">
             {selectedItems.map((booking) => (

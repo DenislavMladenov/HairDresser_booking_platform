@@ -1,5 +1,6 @@
 import { Card, CardHeader } from '../../components/ui/Card';
 import { QueryState } from '../../components/ui/QueryState';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useDayAvailability } from '../../hooks/use-booking-data';
 import { formatDateLong } from '../../lib/format';
 
@@ -11,18 +12,19 @@ interface TimeStepProps {
 }
 
 export function TimeStep({ serviceId, date, selected, onSelect }: TimeStepProps) {
+  const { t } = useTranslation();
   const availability = useDayAvailability(serviceId, date);
   const slots = availability.data?.slots ?? [];
 
   return (
     <Card>
-      <CardHeader title="Choose a time" description={formatDateLong(date)} />
+      <CardHeader title={t.booking.time.title} description={formatDateLong(date)} />
 
       <QueryState
         isLoading={availability.isPending}
         error={availability.error}
         isEmpty={slots.length === 0}
-        emptyMessage="No free times left on this day. Please pick another day."
+        emptyMessage={t.booking.time.empty}
       >
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {slots.map((slot) => {

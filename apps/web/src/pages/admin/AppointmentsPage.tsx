@@ -5,13 +5,14 @@ import { Button } from '../../components/ui/Button';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { Field, TextInput } from '../../components/ui/Field';
 import { QueryState } from '../../components/ui/QueryState';
-import { statusLabel } from '../../lib/booking-status';
+import { useTranslation } from '../../i18n/language-context-core';
 import { sortByStart, useAdminBookings, useBookingActions } from '../../hooks/use-admin';
 import { addDays, todayIsoDate } from '../../lib/format';
 import { BookingEditor } from './BookingEditor';
 import { ManualBookingForm } from './ManualBookingForm';
 
 export function AppointmentsPage() {
+  const { t } = useTranslation();
   const [from, setFrom] = useState(todayIsoDate());
   const [to, setTo] = useState(addDays(todayIsoDate(), 30));
   const [statuses, setStatuses] = useState<BookingStatus[]>([]);
@@ -38,13 +39,15 @@ export function AppointmentsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          title="Appointments"
-          description="Search by date range and status"
-          action={<Button onClick={() => setCreating(true)}>Add appointment</Button>}
+          title={t.admin.appointments.title}
+          description={t.admin.appointments.description}
+          action={
+            <Button onClick={() => setCreating(true)}>{t.admin.appointments.addAppointment}</Button>
+          }
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="From" htmlFor="from">
+          <Field label={t.admin.appointments.fromLabel} htmlFor="from">
             <TextInput
               id="from"
               type="date"
@@ -52,7 +55,7 @@ export function AppointmentsPage() {
               onChange={(event) => setFrom(event.target.value)}
             />
           </Field>
-          <Field label="To" htmlFor="to">
+          <Field label={t.admin.appointments.toLabel} htmlFor="to">
             <TextInput
               id="to"
               type="date"
@@ -78,7 +81,7 @@ export function AppointmentsPage() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {statusLabel(status)}
+                {t.status[status]}
               </button>
             );
           })}
@@ -88,7 +91,7 @@ export function AppointmentsPage() {
               onClick={() => setStatuses([])}
               className="px-2 py-1 text-xs text-slate-500 underline"
             >
-              Clear
+              {t.admin.appointments.clear}
             </button>
           ) : null}
         </div>
@@ -96,15 +99,19 @@ export function AppointmentsPage() {
 
       <Card>
         <CardHeader
-          title="Results"
-          action={<span className="text-sm text-slate-600">{bookings.data?.total ?? 0} found</span>}
+          title={t.admin.appointments.resultsTitle}
+          action={
+            <span className="text-sm text-slate-600">
+              {t.admin.appointments.found(bookings.data?.total ?? 0)}
+            </span>
+          }
         />
 
         <QueryState
           isLoading={bookings.isPending}
           error={bookings.error}
           isEmpty={items.length === 0}
-          emptyMessage="No appointments match these filters."
+          emptyMessage={t.admin.appointments.empty}
         >
           <ul className="space-y-3">
             {items.map((booking) => (

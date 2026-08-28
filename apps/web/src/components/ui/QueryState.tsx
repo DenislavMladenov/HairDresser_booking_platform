@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ApiError } from '../../lib/api-client';
+import { useApiErrorMessage } from '../../i18n/api-errors';
+import { useTranslation } from '../../i18n/language-context-core';
 import { Alert } from './Alert';
 import { Spinner } from './Spinner';
 
@@ -20,9 +21,12 @@ export function QueryState({
   isLoading,
   error,
   isEmpty = false,
-  emptyMessage = 'Nothing to show yet.',
+  emptyMessage,
   children,
 }: QueryStateProps) {
+  const { t } = useTranslation();
+  const errorMessage = useApiErrorMessage(error);
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-10 text-slate-400">
@@ -33,14 +37,18 @@ export function QueryState({
 
   if (error) {
     return (
-      <Alert tone="error" title="Could not load this">
-        {error instanceof ApiError ? error.message : 'Please try again in a moment.'}
+      <Alert tone="error" title={t.shared.queryState.errorTitle}>
+        {errorMessage}
       </Alert>
     );
   }
 
   if (isEmpty) {
-    return <p className="py-8 text-center text-sm text-slate-500">{emptyMessage}</p>;
+    return (
+      <p className="py-8 text-center text-sm text-slate-500">
+        {emptyMessage ?? t.shared.queryState.defaultEmpty}
+      </p>
+    );
   }
 
   return <>{children}</>;

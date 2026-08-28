@@ -4,6 +4,8 @@ import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { Field, Select, TextArea, TextInput } from '../../components/ui/Field';
 import { Modal } from '../../components/ui/Modal';
+import { useApiErrorMessage } from '../../i18n/api-errors';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useAdminServices, type BookingActions } from '../../hooks/use-admin';
 import { ApiError } from '../../lib/api-client';
 import { BUSINESS_TIMEZONE, todayIsoDate } from '../../lib/format';
@@ -18,6 +20,7 @@ interface ManualBookingFormProps {
  * but the server still refuses a time that overlaps another appointment.
  */
 export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) {
+  const { t } = useTranslation();
   const services = useAdminServices();
   const activeServices = (services.data ?? []).filter((service) => service.active);
 
@@ -54,24 +57,25 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
   }
 
   const failure = actions.create.error;
+  const failureMessage = useApiErrorMessage(failure);
 
   return (
-    <Modal title="Add appointment" onClose={onClose}>
+    <Modal title={t.admin.manualBooking.title} onClose={onClose}>
       {failure ? (
         <div className="mb-4">
           <Alert
             tone="error"
-            title="Could not add it"
+            title={t.admin.manualBooking.couldNotAdd}
             details={failure instanceof ApiError ? failure.details : undefined}
           >
-            {failure instanceof ApiError ? failure.message : 'Please try again.'}
+            {failureMessage}
           </Alert>
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Date" htmlFor="manual-date" required>
+          <Field label={t.admin.manualBooking.dateLabel} htmlFor="manual-date" required>
             <TextInput
               id="manual-date"
               type="date"
@@ -81,7 +85,7 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
             />
           </Field>
 
-          <Field label="Time" htmlFor="manual-time" required>
+          <Field label={t.admin.manualBooking.timeLabel} htmlFor="manual-time" required>
             <TextInput
               id="manual-time"
               type="time"
@@ -92,7 +96,7 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
           </Field>
         </div>
 
-        <Field label="Service" htmlFor="manual-service" required>
+        <Field label={t.admin.manualBooking.serviceLabel} htmlFor="manual-service" required>
           <Select
             id="manual-service"
             required
@@ -107,7 +111,7 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
           </Select>
         </Field>
 
-        <Field label="Customer name" htmlFor="manual-name" required>
+        <Field label={t.admin.manualBooking.nameLabel} htmlFor="manual-name" required>
           <TextInput
             id="manual-name"
             required
@@ -117,7 +121,7 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
           />
         </Field>
 
-        <Field label="Phone" htmlFor="manual-phone" required>
+        <Field label={t.admin.manualBooking.phoneLabel} htmlFor="manual-phone" required>
           <TextInput
             id="manual-phone"
             type="tel"
@@ -128,7 +132,7 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
           />
         </Field>
 
-        <Field label="Notes" htmlFor="manual-notes">
+        <Field label={t.admin.manualBooking.notesLabel} htmlFor="manual-notes">
           <TextArea
             id="manual-notes"
             rows={2}
@@ -140,10 +144,10 @@ export function ManualBookingForm({ actions, onClose }: ManualBookingFormProps) 
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t.admin.manualBooking.cancel}
           </Button>
           <Button type="submit" loading={actions.create.isPending}>
-            Add appointment
+            {t.admin.manualBooking.submit}
           </Button>
         </div>
       </form>

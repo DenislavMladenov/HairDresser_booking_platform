@@ -1,6 +1,7 @@
 import { BookingStatus, type AdminBooking } from '@booking/shared';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/StatusBadge';
+import { useTranslation } from '../../i18n/language-context-core';
 import { formatDuration, formatMoney, formatTimeRange } from '../../lib/format';
 import type { BookingActions } from '../../hooks/use-admin';
 
@@ -18,6 +19,7 @@ interface BookingCardProps {
  * rules, so a stale page cannot perform an invalid transition.
  */
 export function BookingCard({ booking, actions, showDate = false, onEdit }: BookingCardProps) {
+  const { t } = useTranslation();
   const isOpen =
     booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED;
   const busy =
@@ -63,7 +65,7 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
           <p className="mt-1 text-sm text-slate-500">
             {booking.service.name} · {formatDuration(booking.service.durationMinutes)} ·{' '}
             {formatMoney(booking.service.price, booking.service.currency)}
-            {booking.createdByAdmin ? ' · added manually' : ''}
+            {booking.createdByAdmin ? ` · ${t.shared.bookingCard.addedManually}` : ''}
           </p>
 
           {booking.notes ? (
@@ -76,7 +78,7 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
         <div className="flex shrink-0 flex-wrap gap-2">
           {booking.status === BookingStatus.PENDING ? (
             <Button size="sm" disabled={busy} onClick={() => actions.confirm.mutate(booking.id)}>
-              Confirm
+              {t.shared.bookingCard.confirm}
             </Button>
           ) : null}
 
@@ -88,7 +90,7 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
                 disabled={busy}
                 onClick={() => actions.complete.mutate(booking.id)}
               >
-                Done
+                {t.shared.bookingCard.done}
               </Button>
               <Button
                 size="sm"
@@ -96,11 +98,11 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
                 disabled={busy}
                 onClick={() => actions.noShow.mutate(booking.id)}
               >
-                No show
+                {t.shared.bookingCard.noShow}
               </Button>
               {onEdit ? (
                 <Button size="sm" variant="ghost" disabled={busy} onClick={() => onEdit(booking)}>
-                  Edit
+                  {t.shared.bookingCard.edit}
                 </Button>
               ) : null}
               <Button
@@ -109,7 +111,7 @@ export function BookingCard({ booking, actions, showDate = false, onEdit }: Book
                 disabled={busy}
                 onClick={() => actions.cancel.mutate(booking.id)}
               >
-                Cancel
+                {t.shared.bookingCard.cancel}
               </Button>
             </>
           ) : null}

@@ -1,15 +1,12 @@
 import { useState } from 'react';
-import {
-  WEEKDAY_LABELS,
-  type UpdateWorkingHoursDay,
-  type Weekday,
-  type WorkingHoursDay,
-} from '@booking/shared';
+import type { UpdateWorkingHoursDay, Weekday, WorkingHoursDay } from '@booking/shared';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { TextInput } from '../../components/ui/Field';
 import { QueryState } from '../../components/ui/QueryState';
+import { useApiErrorMessage } from '../../i18n/api-errors';
+import { useTranslation } from '../../i18n/language-context-core';
 import { useUpdateWorkingHours, useWorkingHours } from '../../hooks/use-admin';
 import { ApiError } from '../../lib/api-client';
 import { formatMinuteOfDay } from '../../lib/format';
@@ -46,8 +43,10 @@ function toMinutes(value: string): number {
 }
 
 export function WorkingHoursPage() {
+  const { t } = useTranslation();
   const workingHours = useWorkingHours();
   const save = useUpdateWorkingHours();
+  const saveErrorMessage = useApiErrorMessage(save.error);
 
   // Server state is the source until the barber edits something; deriving it
   // during render avoids seeding state from an effect.
@@ -100,11 +99,11 @@ export function WorkingHoursPage() {
   return (
     <Card>
       <CardHeader
-        title="Working hours"
-        description="Times are in the shop's timezone and apply every week"
+        title={t.admin.workingHours.title}
+        description={t.admin.workingHours.description}
         action={
           <Button onClick={handleSave} loading={save.isPending} disabled={days === null}>
-            Save week
+            {t.admin.workingHours.saveWeek}
           </Button>
         }
       />
@@ -113,17 +112,17 @@ export function WorkingHoursPage() {
         <div className="mb-4">
           <Alert
             tone="error"
-            title="Could not save the schedule"
+            title={t.admin.workingHours.couldNotSave}
             details={save.error instanceof ApiError ? save.error.details : undefined}
           >
-            {save.error instanceof ApiError ? save.error.message : 'Please try again.'}
+            {saveErrorMessage}
           </Alert>
         </div>
       ) : null}
 
       {save.isSuccess && draft === null ? (
         <div className="mb-4">
-          <Alert tone="success">Schedule saved.</Alert>
+          <Alert tone="success">{t.admin.workingHours.saved}</Alert>
         </div>
       ) : null}
 
@@ -142,7 +141,7 @@ export function WorkingHoursPage() {
                     className="text-brand-600 focus:ring-brand-600 h-4 w-4 rounded border-slate-300"
                   />
                   <span className="font-medium text-slate-800">
-                    {WEEKDAY_LABELS[day.dayOfWeek]}
+                    {t.common.weekdaysFull[day.dayOfWeek]}
                   </span>
                 </label>
 
@@ -150,17 +149,21 @@ export function WorkingHoursPage() {
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <TextInput
                       type="time"
-                      aria-label={`${WEEKDAY_LABELS[day.dayOfWeek]} opening time`}
+                      aria-label={t.admin.workingHours.openingAria(
+                        t.common.weekdaysFull[day.dayOfWeek],
+                      )}
                       value={formatMinuteOfDay(day.openMinute)}
                       onChange={(event) =>
                         updateDay(day.dayOfWeek, { openMinute: toMinutes(event.target.value) })
                       }
                       className="w-32"
                     />
-                    <span className="text-slate-500">to</span>
+                    <span className="text-slate-500">{t.admin.workingHours.to}</span>
                     <TextInput
                       type="time"
-                      aria-label={`${WEEKDAY_LABELS[day.dayOfWeek]} closing time`}
+                      aria-label={t.admin.workingHours.closingAria(
+                        t.common.weekdaysFull[day.dayOfWeek],
+                      )}
                       value={formatMinuteOfDay(day.closeMinute)}
                       onChange={(event) =>
                         updateDay(day.dayOfWeek, { closeMinute: toMinutes(event.target.value) })
@@ -169,7 +172,7 @@ export function WorkingHoursPage() {
                     />
                   </div>
                 ) : (
-                  <span className="text-sm text-slate-500">Closed</span>
+                  <span className="text-sm text-slate-500">{t.admin.workingHours.closed}</span>
                 )}
               </div>
 
@@ -180,10 +183,10 @@ export function WorkingHoursPage() {
                       key={`${day.dayOfWeek}-${index}`}
                       className="flex flex-wrap items-center gap-2 text-sm"
                     >
-                      <span className="w-32 text-slate-600">Break</span>
+                      <span className="w-32 text-slate-600">{t.admin.workingHours.breakLabel}</span>
                       <TextInput
                         type="time"
-                        aria-label="Break start"
+                        aria-label={t.admin.workingHours.breakStartAria}
                         value={formatMinuteOfDay(item.startMinute)}
                         onChange={(event) =>
                           updateBreak(day.dayOfWeek, index, {
@@ -192,10 +195,10 @@ export function WorkingHoursPage() {
                         }
                         className="w-32"
                       />
-                      <span className="text-slate-500">to</span>
+                      <span className="text-slate-500">{t.admin.workingHours.to}</span>
                       <TextInput
                         type="time"
-                        aria-label="Break end"
+                        aria-label={t.admin.workingHours.breakEndAria}
                         value={formatMinuteOfDay(item.endMinute)}
                         onChange={(event) =>
                           updateBreak(day.dayOfWeek, index, {
@@ -213,7 +216,7 @@ export function WorkingHoursPage() {
                           })
                         }
                       >
-                        Remove
+                        {t.admin.workingHours.removeBreak}
                       </Button>
                     </div>
                   ))}
@@ -227,7 +230,7 @@ export function WorkingHoursPage() {
                       })
                     }
                   >
-                    Add break
+                    {t.admin.workingHours.addBreak}
                   </Button>
                 </div>
               ) : null}
