@@ -234,16 +234,24 @@ podman compose exec api booking seed
 The app is then on port 8080 rather than 80, which it handles by itself because it
 derives its expected origin from the request.
 
-Rootless containers do not come back after a reboot on their own:
+Rootless containers do not come back after a reboot on their own. Both commands
+are needed, and neither is optional: without lingering the containers are killed
+at logout, and without the restart service nothing starts them at boot.
 
 ```bash
 loginctl enable-linger "$USER"
 systemctl --user enable --now podman-restart.service
+loginctl show-user "$USER" --property=Linger    # expect Linger=yes
 ```
 
+Reboot once and confirm the stack came back before calling the deployment
+finished. A stack that has been down since the last reboot looks identical to one
+that was never started.
+
 If containers fail with `netavark ... nftables error`, the kernel has incomplete
-nftables support, which is typical in WSL. That and the choice of Compose provider
-are covered in [docs/deployment.md](docs/deployment.md).
+nftables support, which is typical in WSL. That, the choice of Compose provider,
+and what to do when `podman ps` reports lock errors are covered in
+[docs/deployment.md](docs/deployment.md).
 
 ### Running it
 
@@ -258,7 +266,8 @@ docker compose pull && docker compose up -d    # update to a new release
 ```
 
 Everything comes back by itself after a reboot: the Docker service is enabled and
-the containers are declared `restart: unless-stopped`.
+the containers are declared `restart: always`. Under Podman that declaration is
+not enough on its own; see the note above.
 
 To pin an exact build instead of following `latest`, create a `.env` next to
 `compose.yml` containing `IMAGE_TAG=1.1.1`. Nothing else belongs there; every

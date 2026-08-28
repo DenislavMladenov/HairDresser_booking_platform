@@ -196,22 +196,85 @@ chmod +x ~/.docker/cli-plugins/docker-compose
 
 Use `docker-compose-linux-aarch64` on ARM.
 
-Surviving a reboot. This is the difference most likely to be discovered late.
-Rootful Podman needs the restart service enabled; rootless additionally needs
-lingering, or the user's containers are killed at logout:
+Surviving a reboot. This is the difference most likely to be discovered late, and
+it has three parts rather than one. Rootful Podman needs the restart service
+enabled; rootless additionally needs lingering, or the user's containers are
+killed at logout:
 
 ```bash
 # rootless
 loginctl enable-linger "$USER"
 systemctl --user enable --now podman-restart.service
+loginctl show-user "$USER" --property=Linger    # expect Linger=yes
 
 # rootful
 sudo systemctl enable --now podman-restart.service
 ```
 
+The third part is in `compose.yml`. Docker's daemon restarts anything marked
+either `always` or `unless-stopped`, but the unit that stands in for it here is
+narrower than that:
+
+```bash
+systemctl --user cat podman-restart.service | grep ExecStart
+# ExecStart=/usr/bin/podman $LOGGING start --all --filter restart-policy=always
+```
+
+The filter is an exact match, so `unless-stopped` containers are skipped in
+silence and the stack stays down until someone logs in and notices. That is why
+the long-running services here declare `restart: always`; Docker's reading of the
+two differs only in whether a deliberately stopped container is revived at boot,
+which is not a distinction worth an outage. If you have an older `compose.yml`,
+download it again before relying on a reboot.
+
 Reboot once and confirm the stack came back before considering the deployment
-finished. For something long-lived, generating proper units with
-`podman generate systemd` or Quadlet is sturdier than the restart service.
+finished; a stack that has been down since the last reboot is indistinguishable
+from one that was never started. For something long-lived, generating proper
+units with `podman generate systemd` or Quadlet is sturdier than the restart
+service.
+
+### If podman ps reports lock errors
+
+```
+ERRO[0000] Refreshing container 1a9ff97f05cf: acquiring lock 3 for container 1a9ff97f05cf: file exists
+ERRO[0000] Refreshing volume booking_secrets: acquiring lock 0 for volume booking_secrets: file exists
+```
+
+Podman keeps its locks in a shared-memory table that is separate from the
+container database, and the two have drifted apart. It happens when the runtime
+directory is cleared while the container state survives, typically across a reboot
+or a `/tmp` cleanup. Nothing is damaged: the containers, volumes and their
+contents are all still there, and Podman is only failing to reconcile them.
+
+`podman system renumber` rebuilds the table, and it needs the runtime to be idle:
+
+```bash
+podman ps -a                                      # errors are expected here
+pgrep -a -f 'conmon|rootlessport' || echo idle
+
+systemctl --user stop podman.socket
+podman system renumber
+podman ps -a                                      # now clean
+
+systemctl --user start podman.socket
+cd ~/booking && podman compose up -d
+```
+
+If it still refuses, a stale lock file is left in shared memory. Remove it while
+nothing is running and renumber again:
+
+```bash
+rm -f "/dev/shm/libpod_rootless_lock_$(id -u)"
+podman system renumber
+```
+
+Do not reach for `podman system reset`. It removes volumes, and the appointments
+and the staff account live in `booking_postgres-data`. If some future problem
+genuinely calls for it, copy the volume out first with the containers stopped:
+
+```bash
+cp -a ~/.local/share/containers/storage/volumes/booking_postgres-data ~/booking-volume-backup
+```
 
 ### If containers fail to start with an nftables error
 
@@ -240,6 +303,10 @@ generated on first start, migrations applied, the app served, `podman compose
 exec api booking seed` and the admin bootstrap both working, login succeeding and
 the session surviving the next request, and the data network still isolating
 PostgreSQL from the public-facing container.
+
+A reboot was not among those checks, which is how the restart-policy gap above
+reached a real deployment and kept it down overnight. Treat the reboot as part of
+the installation rather than as a later curiosity.
 
 ## Local network only, without a domain
 

@@ -4,15 +4,20 @@
 #
 #   docker compose up -d
 #
+# and the app answers on port 80 for whatever address that host has. Secrets are
+# generated on first start and kept in a volume. There is no .env to write, no
+# domain to declare and no origin to whitelist, because the API derives the
+# expected origin from each request.
+#
 # Podman works too. Nothing here depends on being started in a particular order,
 # so implementations that ignore `depends_on` conditions still bring the stack up;
 # containers wait for what they need instead. Rootless Podman cannot bind port 80,
 # so set HTTP_PORT to something above 1024. See the README.
 #
-# and the app answers on port 80 for whatever address that host has. Secrets are
-# generated on first start and kept in a volume. There is no .env to write, no
-# domain to declare and no origin to whitelist, because the API derives the
-# expected origin from each request.
+# The long-running services say `restart: always` rather than `unless-stopped`
+# because podman-restart.service, which is what brings containers back after a
+# reboot, only starts containers whose policy is exactly `always`. Docker treats
+# the two almost identically, so the stricter of the pair is the portable choice.
 #
 # Set DOMAIN to a real hostname when you want a public deployment with automatic
 # HTTPS. Everything else in .env.example is optional tuning.
@@ -72,7 +77,7 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-booking}
       POSTGRES_DB: ${POSTGRES_DB:-booking}
@@ -119,7 +124,7 @@ services:
 
   api:
     image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-api:${IMAGE_TAG:-latest}
-    restart: unless-stopped
+    restart: always
     environment:
       NODE_ENV: production
       API_PORT: 3000
@@ -160,7 +165,7 @@ services:
 
   caddy:
     image: ${IMAGE_REGISTRY:-ghcr.io/denislavmladenov}/hairdresser-booking-web:${IMAGE_TAG:-latest}
-    restart: unless-stopped
+    restart: always
     environment:
       # `:80` answers on any hostname over plain HTTP and requests no
       # certificate, which is what makes an unconfigured start work anywhere.
